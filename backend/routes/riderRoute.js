@@ -6,13 +6,15 @@ import {
   signup as rider_signup,
   login as rider_login,
 } from "../controllers/rider.controller.js";
+import { logout } from "../controllers/auth.controller.js";
 
 const router = express.Router();
 
 router.post("/register", validinfo, rider_signup);
 router.post("/login", validinfo, rider_login);
+router.get("/logout", logout);
 
-router.get("/customer/is-varify", authorization, async (req, res) => {
+router.get("/is-varify", authorization, async (req, res) => {
   try {
     res.json(true);
   } catch (err) {

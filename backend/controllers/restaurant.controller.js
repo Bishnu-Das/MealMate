@@ -72,3 +72,53 @@ export const login = async (req, res) => {
     res.status(500).json({ message: "internal server error" });
   }
 };
+export const logout = async (req, res) => {
+  try {
+    res.cookie("jwt", "", { maxAge: 0 });
+    res.status(200).json({ message: "Logged out successfully" });
+  } catch (err) {
+    console.log("Error in logout controller", err.message);
+    res.status(500).json({ message: "internal server error" });
+  }
+};
+
+export const add_menu = async (req, res) => {
+  const id = req.user.id;
+  console.log("restaurant id", id);
+  const { category, name, description, price, is_available } = req.body;
+
+  try {
+    let categoryResult = await pool.query(
+      `SELECT * FROM menu_categories WHERE restaurant_id = $1 AND name = $2`,
+      [id, category]
+    );
+
+    // If category does not exist, insert it
+    if (categoryResult.rows.length === 0) {
+      categoryResult = await pool.query(
+        `INSERT INTO menu_categories (restaurant_id, name) VALUES($1, $2) RETURNING *`,
+        [id, category]
+      );
+    }
+
+    const category_id = categoryResult.rows[0].category_id;
+
+    const newItem = await pool.query(
+      `INSERT INTO menu_items (category_id, name, description, price, is_available)
+       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+      [category_id, name, description, price, is_available]
+    );
+
+    if (newItem.rows.length > 0) {
+      res.status(201).json({
+        message: "Menu item added successfully",
+        item: newItem.rows[0],
+      });
+    } else {
+      res.status(400).json({ message: "Menu item not added" });
+    }
+  } catch (err) {
+    console.log("Error in add_menu controller", err.message);
+    res.status(500).json({ message: "internal server error" });
+  }
+};

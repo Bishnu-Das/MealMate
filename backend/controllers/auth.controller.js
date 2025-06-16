@@ -80,3 +80,62 @@ export const login = async (req, res) => {
     res.status(500).json({ message: "internal server error" });
   }
 };
+export const logout = async (req, res) => {
+  try {
+    res.cookie("jwt", "", { maxAge: 0 });
+    res.status(200).json({ message: "Logged out successfully" });
+  } catch (err) {
+    console.log("Error in logout controller", err.message);
+    res.status(500).json({ message: "internal server error" });
+  }
+};
+export const getNearbyRestaurants = async (req, res) => {
+  try {
+    const id = req.user.id;
+    const nearbyRestaurants = await pool.query(
+      `
+      SELECT r.*, 
+        ST_Distance(
+          ST_MakePoint(r.longitude, r.latitude)::GEOGRAPHY,
+          ST_MakePoint(ul.longitude, ul.latitude)::GEOGRAPHY
+        ) AS distance
+      FROM restaurants r
+      JOIN user_locations ul ON ul.user_id = $1
+      WHERE ul.is_primary = true AND ST_DWithin(
+        ST_MakePoint(r.longitude, r.latitude)::GEOGRAPHY,
+        ST_MakePoint(ul.longitude, ul.latitude)::GEOGRAPHY,
+        $2
+      )
+      ORDER BY distance
+      LIMIT 30
+      `,
+      [id, 5000] // 5000 meters = 5 km
+    );
+    if (nearbyRestaurants.rows.length === 0) {
+      const nearbyRestaurants = await pool.query(
+        `
+      SELECT r.*, 
+        ST_Distance(
+          ST_MakePoint(r.longitude, r.latitude)::GEOGRAPHY,
+          ST_MakePoint(ul.longitude, ul.latitude)::GEOGRAPHY
+        ) AS distance
+      FROM restaurants r
+      JOIN user_locations ul ON ul.user_id = $1
+      WHERE ul.is_primary = true AND ST_DWithin(
+        ST_MakePoint(r.longitude, r.latitude)::GEOGRAPHY,
+        ST_MakePoint(ul.longitude, ul.latitude)::GEOGRAPHY,
+        $2
+      )
+      ORDER BY distance
+      LIMIT 30
+      `,
+        [id, 10000] // 5000 meters = 5 km
+      );
+    }
+
+    res.status(200).json(nearbyRestaurants.rows);
+  } catch (err) {
+    console.error("Error in getNearbyRestaurants:", err.message);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
