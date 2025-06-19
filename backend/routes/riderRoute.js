@@ -14,6 +14,7 @@ router.post("/register", validinfo, rider_signup);
 router.post("/login", validinfo, rider_login);
 router.get("/logout", logout);
 
+
 router.get("/is-varify", authorization, async (req, res) => {
   try {
     res.json(true);

@@ -14,14 +14,15 @@ export const signup = async (req, res) => {
   } = req.body;
 
   try {
-    // Check if rider already exists
-    const rider = await pool.query(
-      "SELECT * FROM users WHERE email = $1 AND role_id = 'rider'",
+    // Check if the email already exists in the users table
+    const existingUser = await pool.query(
+      "SELECT * FROM users WHERE email = $1",
       [email]
     );
 
-    if (rider.rows.length !== 0) {
-      return res.status(409).json({ message: "Rider already exists" });
+    if (existingUser.rows.length !== 0) {
+      // If a user with the same email already exists, return an error
+      return res.status(409).json({ message: "Email already in use" });
     }
 
     // Hash password
@@ -59,10 +60,11 @@ export const signup = async (req, res) => {
       is_available,
     });
   } catch (err) {
-    console.error(err.message);
-    res.status(500).json({ message: "Server error" });
+    console.error("Error during rider signup:", err.message);
+    res.status(500).json({ message: "Server error", error: err.message });
   }
 };
+
 
 export const login = async (req, res) => {
   const { email, password } = req.body;
