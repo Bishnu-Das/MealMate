@@ -45,7 +45,7 @@ export const signup = async (req, res) => {
     );
 
     // Generate token and respond
-    generateToken(userId, res);
+    generateToken(userId, "rider", res);
 
     res.status(201).json({
       message: "Rider registered successfully",
@@ -98,7 +98,7 @@ export const login = async (req, res) => {
     );
 
     // 4. Generate JWT and set cookie
-    generateToken(userId, res);
+    generateToken(userId, "rider", res);
 
     // 5. Return rider info
     res.status(200).json({

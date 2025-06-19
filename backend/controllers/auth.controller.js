@@ -5,7 +5,15 @@ import pool from "../db.js";
 export const signup = async (req, res) => {
   try {
     //1. destructure the req.body (name, email, password)
-    const { name, email, password, phone_number, role_id } = req.body;
+    const {
+      name,
+      email,
+      password,
+      phone_number,
+      role_id,
+      latitude,
+      longitude,
+    } = req.body;
     //2. check if user exist through error
     const user = await pool.query("select * from users where email = $1", [
       email,
@@ -25,9 +33,15 @@ export const signup = async (req, res) => {
       "INSERT INTO USERS (name,email,password,phone_number,role_id) VALUES ($1,$2,$3,$4,$5) RETURNING *",
       [name, email, hashedPassword, phone_number, role_id]
     );
+    if (latitude !== null && longitude !== null) {
+      await pool.query(
+        "INSERT INTO user_locations (user_id, latitude, longitude) VALUES ($1, $2, $3)",
+        [newUser.rows[0].user_id, latitude, longitude]
+      );
+    }
     //res.json(newUser.rows[0]);
     //5. generating our jwt token
-    generateToken(newUser.rows[0].user_id, res);
+    generateToken(newUser.rows[0].user_id, "customer", res);
     res.status(201).json({
       user_id: newUser.rows[0].user_id,
       email: newUser.rows[0].email,
@@ -40,7 +54,6 @@ export const signup = async (req, res) => {
     res.status(500).json({ message: "server error" });
   }
 };
-
 export const login = async (req, res) => {
   const { email, password } = req.body;
 
@@ -66,7 +79,7 @@ export const login = async (req, res) => {
 
     //4. give them the jwt token
     const user_id = user.rows[0].user_id;
-    generateToken(user_id, res);
+    generateToken(user_id, "customer", res);
 
     res.status(200).json({
       message: "Login successful",
@@ -92,50 +105,88 @@ export const logout = async (req, res) => {
 export const getNearbyRestaurants = async (req, res) => {
   try {
     const id = req.user.id;
-    const nearbyRestaurants = await pool.query(
+    const radius = 5000;
+
+    let result = await pool.query(
       `
-      SELECT r.*, 
+      SELECT r.restaurant_id,r.name,r.phone,r.email,r.average_rating, 
         ST_Distance(
-          ST_MakePoint(r.longitude, r.latitude)::GEOGRAPHY,
+          ST_MakePoint(rl.longitude, rl.latitude)::GEOGRAPHY,
           ST_MakePoint(ul.longitude, ul.latitude)::GEOGRAPHY
         ) AS distance
       FROM restaurants r
-      JOIN user_locations ul ON ul.user_id = $1
-      WHERE ul.is_primary = true AND ST_DWithin(
-        ST_MakePoint(r.longitude, r.latitude)::GEOGRAPHY,
+      JOIN user_locations rl ON rl.restaurant_id = r.restaurant_id
+      JOIN user_locations ul ON ul.user_id = $1 AND ul.is_primary = true
+      WHERE ST_DWithin(
+        ST_MakePoint(rl.longitude, rl.latitude)::GEOGRAPHY,
         ST_MakePoint(ul.longitude, ul.latitude)::GEOGRAPHY,
         $2
       )
       ORDER BY distance
       LIMIT 30
       `,
-      [id, 5000] // 5000 meters = 5 km
+      [id, radius]
     );
-    if (nearbyRestaurants.rows.length === 0) {
-      const nearbyRestaurants = await pool.query(
+
+    // If no restaurants found in 5km, try 10km
+    if (result.rows.length === 0) {
+      const radius2 = 10000;
+      result = await pool.query(
         `
-      SELECT r.*, 
-        ST_Distance(
-          ST_MakePoint(r.longitude, r.latitude)::GEOGRAPHY,
-          ST_MakePoint(ul.longitude, ul.latitude)::GEOGRAPHY
-        ) AS distance
-      FROM restaurants r
-      JOIN user_locations ul ON ul.user_id = $1
-      WHERE ul.is_primary = true AND ST_DWithin(
-        ST_MakePoint(r.longitude, r.latitude)::GEOGRAPHY,
-        ST_MakePoint(ul.longitude, ul.latitude)::GEOGRAPHY,
-        $2
-      )
-      ORDER BY distance
-      LIMIT 30
-      `,
-        [id, 10000] // 5000 meters = 5 km
+        SELECT r.restaurant_id,r.name,r.phone,r.email,r.average_rating, 
+          ST_Distance(
+            ST_MakePoint(rl.longitude, rl.latitude)::GEOGRAPHY,
+            ST_MakePoint(ul.longitude, ul.latitude)::GEOGRAPHY
+          ) AS distance
+        FROM restaurants r
+        JOIN user_locations rl ON rl.restaurant_id = r.restaurant_id
+        JOIN user_locations ul ON ul.user_id = $1 AND ul.is_primary = true
+        WHERE ST_DWithin(
+          ST_MakePoint(rl.longitude, rl.latitude)::GEOGRAPHY,
+          ST_MakePoint(ul.longitude, ul.latitude)::GEOGRAPHY,
+          $2
+        )
+        ORDER BY distance
+        LIMIT 30
+        `,
+        [id, radius2]
       );
     }
 
-    res.status(200).json(nearbyRestaurants.rows);
+    res.status(200).json(result.rows);
   } catch (err) {
     console.error("Error in getNearbyRestaurants:", err.message);
     res.status(500).json({ message: "Internal server error" });
+  }
+};
+export const changePassword = async (req, res) => {
+  const id = req.user.id;
+  const { prevPassword, newPassword } = req.body;
+  try {
+    const user = await pool.query("SELECT * FROM users WHERE user_id = $1", [
+      id,
+    ]);
+    if (user.rows.length === 0) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    const validpassword = await bcrypt.compare(
+      prevPassword,
+      user.rows[0].password
+    );
+    if (!validpassword) {
+      return res.status(401).json({ password: "invalid previous password" });
+    }
+
+    const saltRound = 10;
+    const salt = await bcrypt.genSalt(saltRound);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+    await pool.query("UPDATE users SET password = $1 WHERE user_id = $2", [
+      hashedPassword,
+      id,
+    ]);
+    res.status(200).json({ message: "Password changed successfully.." });
+  } catch (err) {
+    console.log(err.message);
+    res.status(500).json({ message: "server error. in change password.." });
   }
 };
