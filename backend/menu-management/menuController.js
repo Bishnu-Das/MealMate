@@ -1,5 +1,5 @@
 // menu-management/menuController.js
-import { checkRestaurant } from "../middleware/checkRestaurant.js";  // Assuming you have this middleware
+//import { checkRestaurant } from "../middleware/checkRestaurant.js";  // Assuming you have this middleware
 
 import {
   addMenuCategory,

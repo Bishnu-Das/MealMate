@@ -11,26 +11,27 @@ import {
   removeMenuItem
 } from "./menuController.js"; // Import controller functions
 import authorization from "../middleware/authorization.js";
-import { checkRestaurant } from "../middleware/checkRestaurant.js";
+//import { checkRestaurant } from "../middleware/checkRestaurant.js";
+import authorizeRoles from "../middleware/athorizeRoles.js";
 
 const router = express.Router();
 
 // Add menu category
-router.post("/restaurants/:id/categories",authorization,checkRestaurant,  createMenuCategory);
+router.post("/restaurants/:id/categories",authorization,authorizeRoles("restaurant"),  createMenuCategory);
 
 // Edit menu category
-router.put("/categories/:id",authorization,checkRestaurant,  updateCategory);
+router.put("/categories/:id",authorization,authorizeRoles("restaurant"),  updateCategory);
 
 // Delete menu category
-router.delete("/categories/:id",authorization,checkRestaurant,  deleteCategory);
+router.delete("/categories/:id",authorization,authorizeRoles("restaurant"),  deleteCategory);
 
 // Add menu item
-router.post("/categories/:id/items",authorization,checkRestaurant,  createMenuItem);
+router.post("/categories/:id/items",authorization,authorizeRoles("restaurant"),  createMenuItem);
 
 // Update menu item
-router.put("/menu-items/:id",authorization,checkRestaurant,  updateMenuItemDetails);
+router.put("/menu-items/:id",authorization,authorizeRoles("restaurant"),  updateMenuItemDetails);
 
 // Delete menu item
-router.delete("/menu-items/:id",authorization,checkRestaurant,  removeMenuItem);
+router.delete("/menu-items/:id",authorization,authorizeRoles("restaurant"),  removeMenuItem);
 
 export default router;
