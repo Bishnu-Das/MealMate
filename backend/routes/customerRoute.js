@@ -7,8 +7,15 @@ import {
   changePassword,
   login as customer_login,
   signup as customer_signup,
+  getCategories,
+  getMenuItem,
+  getMenus,
   getNearbyRestaurants,
+  getProfile,
+  getRestaurants,
   logout,
+  updateProfile,
+  varifyUser,
 } from "../controllers/auth.controller.js";
 
 const router = express.Router();
@@ -23,24 +30,22 @@ router.get(
   authorizeRoles(role),
   getNearbyRestaurants
 );
-router.get(
-  "/is-varify",
-  authorization,
-  authorizeRoles(role),
-  async (req, res) => {
-    try {
-      res.json(true);
-    } catch (err) {
-      console.log(err.message);
-      res.status(500).json({ message: "internal server error" });
-    }
-  }
-);
+router.get("/is-varify", authorization, authorizeRoles(role), varifyUser);
 router.put(
   "/change_password",
   authorization,
   authorizeRoles(role),
   changePassword
 );
-
+router.get("/profile", authorization, authorizeRoles(role), getProfile);
+router.post(
+  "/update-profile",
+  authorization,
+  authorizeRoles(role),
+  updateProfile
+);
+router.get("/getRestaurants", getRestaurants);
+router.get("/getCategories", getCategories);
+router.get("/menus", getMenus);
+router.get("/menu/:id", getMenuItem);
 export default router;

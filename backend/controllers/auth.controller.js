@@ -5,15 +5,9 @@ import pool from "../db.js";
 export const signup = async (req, res) => {
   try {
     //1. destructure the req.body (name, email, password)
-    const {
-      name,
-      email,
-      password,
-      phone_number,
-      role_id,
-      latitude,
-      longitude,
-    } = req.body;
+    const { name, email, password, phone_number, latitude, longitude } =
+      req.body;
+    const role_id = "customer";
     //2. check if user exist through error
     const user = await pool.query("select * from users where email = $1", [
       email,
@@ -188,5 +182,120 @@ export const changePassword = async (req, res) => {
   } catch (err) {
     console.log(err.message);
     res.status(500).json({ message: "server error. in change password.." });
+  }
+};
+
+export const varifyUser = async (req, res) => {
+  const id = req.user.id;
+  try {
+    const user = await pool.query("SELECT * FROM users WHERE user_id =  $1", [
+      id,
+    ]);
+    res.status(200).json({
+      message: "varified user",
+      user_id: user.rows[0].user_id,
+      name: user.rows[0].name,
+      email: user.rows[0].email,
+      phone_number: user.rows[0].phone_number,
+      role_id: user.rows[0].role_id,
+    });
+  } catch (err) {
+    console.log(err.message);
+    res.status(500).json({ message: "internal server error" });
+  }
+};
+
+export const updateProfile = async (req, res) => {
+  const id = req.user.id;
+  const { name, phone_number, latitude, longitude } = req.body;
+
+  try {
+    // Try updating location
+    const locationUpdate = await pool.query(
+      "UPDATE user_locations SET latitude = $1, longitude = $2 WHERE user_id = $3 RETURNING *",
+      [latitude, longitude, id]
+    );
+
+    // If no existing location, insert it
+    if (locationUpdate.rowCount === 0) {
+      await pool.query(
+        "INSERT INTO user_locations (user_id, latitude, longitude, is_primary) VALUES ($1, $2, $3, $4)",
+        [id, latitude, longitude, true]
+      );
+    }
+
+    // Update name and phone
+    const user = await pool.query(
+      "UPDATE users SET name = $1, phone_number = $2 WHERE user_id = $3 returning *",
+      [name, phone_number, id]
+    );
+    res.status(200).json({
+      message: "updated profile successful",
+      user_id: user.rows[0].user_id,
+      name: user.rows[0].name,
+      email: user.rows[0].email,
+      phone_number: user.rows[0].phone_number,
+      role_id: user.rows[0].role_id,
+    });
+  } catch (err) {
+    console.error("Error in updateProfile:", err.message);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const getRestaurants = async (req, res) => {
+  try {
+    const result = await pool.query("SELECT * FROM restaurants LIMIT 30");
+    res.status(200).json(result.rows);
+  } catch (err) {
+    console.error("Error in get restaurant:", err.message);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const getProfile = async (req, res) => {
+  const id = req.user.id;
+  try {
+    const result = await pool.query("SELECT * FROM users WHERE user_id =  $1", [
+      id,
+    ]);
+    res.status(200).json(result.rows);
+  } catch (err) {
+    console.error("Error in get restaurant:", err.message);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const getCategories = async (req, res) => {
+  try {
+    const result = await pool.query("SELECT * FROM menu_categories LIMIT 30");
+    res.status(200).json(result.rows);
+  } catch (err) {
+    console.error("Error in get restaurant:", err.message);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const getMenus = async (req, res) => {
+  try {
+    const result = await pool.query("SELECT * FROM menu_items LIMIT 30");
+    res.status(200).json(result.rows);
+  } catch (err) {
+    console.error("Error in get restaurant:", err.message);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const getMenuItem = async (req, res) => {
+  const id = req.params.id;
+  try {
+    const result = await pool.query(
+      "SELECT * FROM menu_items where menu_item_id = $1",
+      [id]
+    );
+    res.status(200).json(result.rows);
+  } catch (err) {
+    console.error("Error in get restaurant:", err.message);
+    res.status(500).json({ message: "Internal server error" });
   }
 };

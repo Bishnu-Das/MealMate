@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { userAuthStore } from "../store/useAuthStore";
+import { userAuthStore } from "../store/userAuthStore";
 import { Loader2 } from "lucide-react";
 
 function Login() {
