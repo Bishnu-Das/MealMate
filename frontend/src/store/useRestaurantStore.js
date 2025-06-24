@@ -6,6 +6,7 @@ import { userAuthStore } from "./userAuthStore";
 export const useRestaurantStore = create((set, get) => ({
   restaurants: null,
   loading: false,
+  categories: [],
 
   getrestaurants: async () => {
     set({ loading: true });
@@ -18,8 +19,8 @@ export const useRestaurantStore = create((set, get) => ({
       } else {
         res = await axiosInstance.get("customer/getRestaurants");
       }
-      console.log("restaurants are: ");
-      console.log(res.data);
+      // console.log("restaurants are: ");
+      // console.log(res.data);
       set({ restaurants: res.data });
     } catch (err) {
       console.error("Error fetching restaurants", err);
@@ -27,6 +28,17 @@ export const useRestaurantStore = create((set, get) => ({
       set({ restaurants: [] });
     } finally {
       set({ loading: false });
+    }
+  },
+  getcategories: async () => {
+    try {
+      const res = await axiosInstance.get("customer/getCategories");
+      console.log("categories are: ", res.data);
+      set({ categories: res.data });
+    } catch (err) {
+      console.error("Error fetching categories", err);
+      toast.error(err?.response?.data?.message || "Failed to load categories");
+      set({ categories: [] });
     }
   },
 }));

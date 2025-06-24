@@ -5,6 +5,7 @@ import bcrypt from "bcrypt";
 export const signup = async (req, res) => {
   try {
     const { name, phone, email, latitude, longitude, password } = req.body;
+
     const restaurant = await pool.query(
       "SELECT * FROM restaurants where email = $1",
       [email]
@@ -40,8 +41,6 @@ export const signup = async (req, res) => {
     res.status(500).json({ message: "internal server error" });
   }
 };
-
-
 
 export const login = async (req, res) => {
   const { email, password } = req.body;

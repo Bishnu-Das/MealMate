@@ -5,16 +5,20 @@ import FeaturedRestaurants from "../components/FeaturedRestaurants";
 import CTASection from "../components/CTASection";
 import { useRestaurantStore } from "../store/useRestaurantStore";
 import FeaturedCategories from "../Components/FeaturedCategory";
+import Navbar from "../Components/skeleton/Navbar";
 
 const Home = () => {
-  const { restaurants, getrestaurants, loading } = useRestaurantStore();
+  const { restaurants, categories, getrestaurants, loading, getcategories } =
+    useRestaurantStore();
 
   useEffect(() => {
     getrestaurants();
+    getcategories();
   }, []);
 
   return (
     <div className="min-h-screen">
+      <Navbar />
       <HeroSection />
       <FeaturesSection />
 
@@ -26,7 +30,7 @@ const Home = () => {
         <FeaturedRestaurants restaurants={restaurants} />
       )}
 
-      <FeaturedCategories />
+      <FeaturedCategories categories={categories} />
       <CTASection />
     </div>
   );

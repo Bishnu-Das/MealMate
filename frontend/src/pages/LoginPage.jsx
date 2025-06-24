@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { userAuthStore } from "../store/userAuthStore";
 import { Loader2 } from "lucide-react";
+import Navbar from "../Components/skeleton/Navbar";
 
 function Login() {
   const [showPassword, setShowPassword] = useState(false);
@@ -17,6 +18,7 @@ function Login() {
 
   return (
     <div>
+      <Navbar />
       <section className="bg-gray-50 dark:bg-gray-900">
         <div className="flex flex-col items-center justify-center px-6 py-8 mx-auto md:h-screen lg:py-0">
           <a
@@ -80,7 +82,6 @@ function Login() {
                         aria-describedby="remember"
                         type="checkbox"
                         className="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-primary-300 dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-primary-600 dark:ring-offset-gray-800"
-                        required
                       />
                     </div>
                     <div className="ml-3 text-sm">

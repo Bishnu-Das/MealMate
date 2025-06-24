@@ -12,6 +12,7 @@ import {
   getMenus,
   getNearbyRestaurants,
   getProfile,
+  getRestaurant,
   getRestaurants,
   logout,
   updateProfile,
@@ -38,8 +39,8 @@ router.put(
   changePassword
 );
 router.get("/profile", authorization, authorizeRoles(role), getProfile);
-router.post(
-  "/update-profile",
+router.put(
+  "/update_profile",
   authorization,
   authorizeRoles(role),
   updateProfile
@@ -48,4 +49,5 @@ router.get("/getRestaurants", getRestaurants);
 router.get("/getCategories", getCategories);
 router.get("/menus", getMenus);
 router.get("/menu/:id", getMenuItem);
+router.get("/getRestaurant/:id", getRestaurant);
 export default router;

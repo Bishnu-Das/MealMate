@@ -4,17 +4,17 @@ const sampleCategories = [
   {
     id: "biryani",
     name: "Biryani",
-    imageUrl: "https://source.unsplash.com/400x300/?biryani",
+    menu_category_image_url: "https://source.unsplash.com/400x300/?biryani",
   },
   {
     id: "pizza",
     name: "Pizza",
-    imageUrl: "https://source.unsplash.com/400x300/?pizza",
+    menu_category_image_url: "https://source.unsplash.com/400x300/?pizza",
   },
   {
     id: "desserts",
     name: "Desserts",
-    imageUrl: "https://source.unsplash.com/400x300/?dessert",
+    menu_caetgory_image_url: "https://source.unsplash.com/400x300/?dessert",
   },
 ];
 
@@ -43,7 +43,7 @@ const FeaturedCategories = ({ categories = sampleCategories }) => (
             <div className="card bg-base-200 hover:shadow-xl transition group-hover:-translate-y-2">
               <figure className="relative overflow-hidden">
                 <img
-                  src={category.imageUrl}
+                  src={category.menu_category_image_url}
                   alt={category.name}
                   className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-300"
                 />
