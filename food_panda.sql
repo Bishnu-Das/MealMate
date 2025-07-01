@@ -64,6 +64,7 @@ CREATE TABLE menu_items (
   name VARCHAR(100),
   description TEXT,
   price DECIMAL(10,2) NOT NULL,
+  discount DECIMAL(10,2),
   is_available BOOLEAN DEFAULT true,
   menu_item_image_url VARCHAR(255)
 );

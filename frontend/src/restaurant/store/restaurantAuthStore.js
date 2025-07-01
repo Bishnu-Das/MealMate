@@ -8,7 +8,9 @@ export const restaurantAuthStore = create((set, get) => ({
   isLoggingIn: false,
   isUpdatingProfile: false,
   isCheckingRestaurant: true,
+  isLoggedIn: false,
   socket: null,
+  initialMenuItems2: [],
 
   checkAuthRestaurant: async () => {
     try {
@@ -26,6 +28,8 @@ export const restaurantAuthStore = create((set, get) => ({
       const res = await axiosInstance.post("/restaurant/login", data);
       set({ authRestaurant: res.data });
       toast.success("Logged in successfully");
+      //console.log(authRestaurant);
+      //console.log(res.data);
     } catch (err) {
       toast.error(err?.response?.data?.message || "Login failed");
     } finally {
@@ -56,6 +60,51 @@ export const restaurantAuthStore = create((set, get) => ({
       toast.error(err?.response?.data?.message || "Logout failed");
     } finally {
       set({ isLoggingOut: false });
+    }
+  },
+  add_menu_item: async (data) => {
+    try {
+      const res = await axiosInstance.post("/restaurant/add_menu", data);
+    } catch {
+      toast.error(err?.response?.data?.message || "add menu item failed");
+    }
+  },
+  get_menus: async (data) => {
+    try {
+      const res = await axiosInstance.get("/restaurant/get_menu_items");
+      //console.log(res.data);
+      set({ initialMenuItems2: res.data });
+      return res.data;
+    } catch {
+      toast.error(err?.response?.data?.message || "failed loading menu");
+      return [];
+    }
+  },
+  delete_menu_item: async (id) => {
+    try {
+      console.log("menu_item_id is in auth restaurant: ", id);
+      const res = await axiosInstance.delete(`/restaurant/delete_menu/${id}`);
+
+      if (res.data.status == "success") {
+        return await get_menus();
+      }
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "failed deleting menu");
+      return false;
+    }
+  },
+  edit_menu_item: async (data, id) => {
+    console.log("in edit menu function", id, data);
+    try {
+      const res = await axiosInstance.put(`/restaurant/edit_menu/${id}`, data);
+
+      //console.log("brom backend", res);
+      if (res.status === 200) {
+        return await get().get_menus();
+      }
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "failed editing menu");
+      return false;
     }
   },
 }));

@@ -11,6 +11,8 @@ import {
   delete_menu,
   changePassword,
   logout,
+  varify,
+  get_menu,
 } from "../controllers/restaurant.controller.js";
 
 const router = express.Router();
@@ -19,20 +21,8 @@ const role = "restaurant";
 router.post("/register", validinfo, resturant_signup);
 router.post("/login", validinfo, restaurant_login);
 router.get("/logout", logout);
-router.post("/add_menu", authorization, authorizeRoles("restaurant"), add_menu);
-router.get(
-  "/is-varify",
-  authorization,
-  authorizeRoles(role),
-  async (req, res) => {
-    try {
-      res.json(true);
-    } catch (err) {
-      console.log(err.message);
-      res.status(500).json({ message: "internal server error" });
-    }
-  }
-);
+router.post("/add_menu", authorization, authorizeRoles(role), add_menu);
+router.get("/is-varify", authorization, authorizeRoles(role), varify);
 router.put(
   "/edit_menu/:menu_item_id",
   authorization,
@@ -52,5 +42,6 @@ router.put(
   authorizeRoles(role),
   changePassword
 );
+router.get("/get_menu_items", authorization, authorizeRoles(role), get_menu);
 
 export default router;

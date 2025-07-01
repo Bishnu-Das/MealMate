@@ -11,9 +11,10 @@ import SignupPage from "./pages/SignupPage";
 import ProfilePage from "./pages/ProfilePage";
 import RestaurantPage from "./pages/RestaurantPage";
 import SignupPageRest from "./restaurant/pages/SignupPageRest";
+import { Toaster } from "react-hot-toast";
 
 import Navbar from "./Components/skeleton/Navbar";
-import LoginPageRest from "./restaurant/pages/LoginPageRest";
+import HomepageRest from "./restaurant/pages/HomepageRest";
 
 function App() {
   const { authUser, checkAuth, isCheckingAuth } = userAuthStore();
@@ -34,6 +35,7 @@ function App() {
 
   return (
     <div>
+      <Toaster position="top-right" reverseOrder={false} />
       <BrowserRouter>
         {/* <Navbar /> */}
         <Routes>
@@ -54,10 +56,10 @@ function App() {
           <Route path="/restaurants" element={<RestaurantPage />} />
 
           {/* Restaurant */}
-          <Route
+          {/* <Route
             path="/partner/signup"
             element={
-              !authRestaurant ? <SignupPageRest /> : <Navigate to="/partner" />
+              !authRestaurant ? <LoginPageRest /> : <Navigate to="/partner" />
             }
           />
           <Route
@@ -69,7 +71,8 @@ function App() {
                 <Navigate to="/restaurant/" />
               )
             }
-          />
+          /> */}
+          <Route path="/partner" element={<HomepageRest />} />
 
           {/* Rider routes will go here */}
         </Routes>
