@@ -16,7 +16,7 @@ INSERT INTO rider_profiles (user_id, vehicle_type, current_location, is_availabl
 South Katrinamouth, AR 28386', true);
 
 -- User Locations
-INSERT INTO user_locations (location_id, user_id, street, city, postal_code, latitude, longitude, addr_link, is_primary) VALUES (1, 4, '891 Espinoza Trail Apt. 732', 'West Stephanieborough', '36686', 29.48448506, -11.17003903, 'https://www.poole.net/', true);
+INSERT INTO user_locations (location_id, user_id, street, city, postal_code, latitude, longitude, addr_link, is_primary) VALUES (1, 4, '891 Espinoza Trail Apt. 732', 'West Stephanieborough', '36686', 29.48448506, -11.17003903, 'https://unsplash.com/photos/burger-with-vegetable-on-brown-wooden-tray-I7A_pHLcQK8', true);
 INSERT INTO user_locations (location_id, user_id, street, city, postal_code, latitude, longitude, addr_link, is_primary) VALUES (2, 1, '64596 Jacqueline Fork', 'Port Brandonshire', '68874', 4.34894799, 74.09282236, 'http://www.riley.com/', true);
 INSERT INTO user_locations (location_id, user_id, street, city, postal_code, latitude, longitude, addr_link, is_primary) VALUES (3, 4, '5512 Brenda Highway Apt. 830', 'West Michael', '44535', -34.69259652, 79.81143658, 'https://www.santos-sharp.biz/', true);
 INSERT INTO user_locations (location_id, user_id, street, city, postal_code, latitude, longitude, addr_link, is_primary) VALUES (4, 3, '4829 Greg River Apt. 874', 'East Stevenside', '56975', 82.63795744, 44.31077383, 'https://www.wade-bowman.biz/', true);

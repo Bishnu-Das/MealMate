@@ -1,9 +1,10 @@
 import { useEffect } from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import { Loader } from "lucide-react";
 
 import { userAuthStore } from "./store/userAuthStore";
 import { restaurantAuthStore } from "./restaurant/store/restaurantAuthStore";
+import { useRiderAuthStore } from "./rider/store/riderAuthStore";
 
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
@@ -11,6 +12,12 @@ import SignupPage from "./pages/SignupPage";
 import ProfilePage from "./pages/ProfilePage";
 import RestaurantPage from "./pages/RestaurantPage";
 import SignupPageRest from "./restaurant/pages/SignupPageRest";
+import LoginPageRider from "./rider/pages/LoginPageRider";
+import SignupPageRider from "./rider/pages/SignupPageRider";
+import HomepageRider from "./rider/pages/HomepageRider";
+import DeliveryHistoryPage from "./rider/pages/DeliveryHistoryPage";
+import OrderDetailsPage from "./rider/pages/OrderDetailsPage";
+import ProfilePageRider from "./rider/pages/ProfilePageRider";
 import { Toaster } from "react-hot-toast";
 
 import Navbar from "./Components/skeleton/Navbar";
@@ -20,13 +27,15 @@ function App() {
   const { authUser, checkAuth, isCheckingAuth } = userAuthStore();
   const { authRestaurant, checkAuthRestaurant, isCheckingRestaurant } =
     restaurantAuthStore();
+  const { authrider, checkAuthRider, isCheckingAuthRider } = useRiderAuthStore();
 
   useEffect(() => {
     checkAuth();
     checkAuthRestaurant();
-  }, [checkAuth, checkAuthRestaurant]);
+    checkAuthRider();
+  }, [checkAuth, checkAuthRestaurant, checkAuthRider]);
 
-  if (isCheckingAuth || isCheckingRestaurant)
+  if (isCheckingAuth || isCheckingRestaurant || isCheckingAuthRider)
     return (
       <div className="flex items-center justify-center h-screen">
         <Loader className="size-10 animate-spin" />
@@ -36,7 +45,6 @@ function App() {
   return (
     <div>
       <Toaster position="top-right" reverseOrder={false} />
-      <BrowserRouter>
         {/* <Navbar /> */}
         <Routes>
           {/* Customer */}
@@ -74,9 +82,32 @@ function App() {
           /> */}
           <Route path="/partner" element={<HomepageRest />} />
 
-          {/* Rider routes will go here */}
+          {/* Rider */}
+          <Route
+            path="/rider/login"
+            element={!authrider ? <LoginPageRider /> : <Navigate to="/rider" />}
+          />
+          <Route
+            path="/rider/signup"
+            element={!authrider ? <SignupPageRider /> : <Navigate to="/rider" />}
+          />
+          <Route
+            path="/rider"
+            element={authrider ? <HomepageRider /> : <Navigate to="/rider/login" />}
+          />
+          <Route
+            path="/rider/history"
+            element={authrider ? <DeliveryHistoryPage /> : <Navigate to="/rider/login" />}
+          />
+          <Route
+            path="/rider/data/profile"
+            element={authrider ? <ProfilePageRider /> : <Navigate to="/rider/login" />}
+          />
+          <Route
+            path="/rider/data/orders/:orderId"
+            element={authrider ? <OrderDetailsPage /> : <Navigate to="/rider/login" />}
+          />
         </Routes>
-      </BrowserRouter>
     </div>
   );
 }

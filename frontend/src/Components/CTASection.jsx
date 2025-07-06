@@ -37,7 +37,7 @@ const CTASection = () => (
             </Link>
           </li>
           <li>
-            <Link to="/rider" className="hover:underline">
+            <Link to="/rider/login" className="hover:underline">
               Rider
             </Link>
           </li>

@@ -6,7 +6,7 @@ const validinfo = (req, res, next) => {
     return regex.test(email);
   }
   console.log("in validinfo middlewere");
-  if (req.path === "/register") {
+  if (req.path === "/signup") {
     if (![email, name, password].every(Boolean)) {
       console.log("missing credential");
       return res.status(401).json("Missing Credentials");

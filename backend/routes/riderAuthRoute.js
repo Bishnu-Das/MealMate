@@ -7,35 +7,23 @@ import {
   signup as rider_signup,
   login as rider_login,
   logout,
+  varify,
 } from "../controllers/rider.controller.js";
-import { changePassword } from "../controllers/auth.controller.js";
+
 
 const router = express.Router();
 
-router.post("/register", validinfo, rider_signup);
+router.post("/signup", validinfo, rider_signup);
 router.post("/login", validinfo, rider_login);
-router.get("/logout", logout);
+router.post("/logout", logout);
 
 const role = "rider";
 
 router.get(
-  "/is-varify",
+  "/is-verify",
   authorization,
   authorizeRoles(role),
-  async (req, res) => {
-    try {
-      res.json(true);
-    } catch (err) {
-      console.log(err.message);
-      res.status(500).json({ message: "internal server error" });
-    }
-  }
-);
-router.put(
-  "/change_password",
-  authorization,
-  authorizeRoles(role),
-  changePassword
+  varify
 );
 
 export default router;
