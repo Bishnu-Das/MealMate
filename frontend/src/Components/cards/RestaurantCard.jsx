@@ -1,12 +1,18 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Star, Phone } from "lucide-react";
 
 const RestaurantCard = ({ restaurant }) => {
-  const { id, name, email, average_rating, phone, image_url } = restaurant;
+  const { restaurant_id, name, email, average_rating, phone, image_url } =
+    restaurant;
+
+  const navigate = useNavigate();
+  const handleCardClick = () => {
+    navigate(`/restaurants/${restaurant_id}`);
+  };
 
   return (
-    <Link to={`/restaurants/${id}`} className="group">
+    <Link to={`/restaurants/${restaurant_id}`} className="group">
       <div className="card bg-base-100 shadow-xl hover:shadow-2xl transition-all duration-300 group-hover:-translate-y-2">
         <figure className="relative overflow-hidden">
           <img

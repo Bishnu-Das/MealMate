@@ -22,6 +22,9 @@ import { Toaster } from "react-hot-toast";
 
 import Navbar from "./Components/skeleton/Navbar";
 import HomepageRest from "./restaurant/pages/HomepageRest";
+import RestaurantProfie from "./pages/RestaurantProfile";
+
+import { element } from "prop-types";
 
 function App() {
   const { authUser, checkAuth, isCheckingAuth } = userAuthStore();
@@ -62,6 +65,7 @@ function App() {
             element={authUser ? <ProfilePage /> : <Navigate to="/login" />}
           />
           <Route path="/restaurants" element={<RestaurantPage />} />
+          <Route path="/restaurant/:id" element={<RestaurantProfie />} />
 
           {/* Restaurant */}
           {/* <Route

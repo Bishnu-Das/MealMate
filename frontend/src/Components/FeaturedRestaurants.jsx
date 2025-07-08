@@ -20,8 +20,8 @@ const FeaturedRestaurants = ({ restaurants }) => (
         {restaurants && restaurants.length > 0 ? (
           restaurants.map((restaurant) => (
             <Link
-              key={restaurant.id}
-              to={`/restaurant/${restaurant.id}`}
+              key={restaurant.restaurant_id}
+              to={`/restaurant/${restaurant.restaurant_id}`}
               className="group"
             >
               <div className="card bg-base-100 shadow-xl hover:shadow-2xl transition-all duration-300 group-hover:-translate-y-2">

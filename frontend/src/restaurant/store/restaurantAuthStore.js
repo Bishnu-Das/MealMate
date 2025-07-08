@@ -10,7 +10,7 @@ export const restaurantAuthStore = create((set, get) => ({
   isCheckingRestaurant: true,
   isLoggedIn: false,
   socket: null,
-  initialMenuItems2: [],
+  initialMenuItems: [],
 
   checkAuthRestaurant: async () => {
     try {
@@ -73,7 +73,7 @@ export const restaurantAuthStore = create((set, get) => ({
     try {
       const res = await axiosInstance.get("/restaurant/get_menu_items");
       //console.log(res.data);
-      set({ initialMenuItems2: res.data });
+      set({ initialMenuItems: res.data });
       return res.data;
     } catch {
       toast.error(err?.response?.data?.message || "failed loading menu");
@@ -86,7 +86,7 @@ export const restaurantAuthStore = create((set, get) => ({
       const res = await axiosInstance.delete(`/restaurant/delete_menu/${id}`);
 
       if (res.data.status == "success") {
-        return await get_menus();
+        return await get().get_menus();
       }
     } catch (err) {
       toast.error(err?.response?.data?.message || "failed deleting menu");

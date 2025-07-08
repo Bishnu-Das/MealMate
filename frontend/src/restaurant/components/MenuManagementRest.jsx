@@ -15,55 +15,12 @@ import EditMenuItemRest from "./EditMenuItemRest";
 import { restaurantAuthStore } from "../store/restaurantAuthStore";
 import toast from "react-hot-toast";
 
-const initialMenuItems = [
-  {
-    id: 1,
-    name: "Margherita Pizza",
-    description: "Fresh tomatoes, mozzarella cheese, basil",
-    price: "$14.99",
-    category: "Pizza",
-    status: "active",
-    image:
-      "https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?w=300&h=200&fit=crop",
-  },
-  {
-    id: 2,
-    name: "Chicken Burger",
-    description: "Grilled chicken breast, lettuce, tomato, mayo",
-    price: "$12.99",
-    category: "Burgers",
-    status: "active",
-    image:
-      "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=300&h=200&fit=crop",
-  },
-  {
-    id: 3,
-    name: "Pasta Carbonara",
-    description: "Creamy pasta with bacon and parmesan",
-    price: "$15.99",
-    category: "Pasta",
-    status: "inactive",
-    image:
-      "https://images.unsplash.com/photo-1621996346565-e3dbc353d2e5?w=300&h=200&fit=crop",
-  },
-  {
-    id: 4,
-    name: "Caesar Salad",
-    description: "Romaine lettuce, croutons, caesar dressing",
-    price: "$10.99",
-    category: "Salads",
-    status: "active",
-    image:
-      "https://images.unsplash.com/photo-1546793665-c74683f339c1?w=300&h=200&fit=crop",
-  },
-];
-
 const categories = ["All", "Pizza", "Burgers", "Pasta", "Salads"];
 
 function MenuManagementRest() {
-  const { initialMenuItems2, get_menus, delete_menu_item, edit_menu_item } =
+  const { initialMenuItems, get_menus, delete_menu_item, edit_menu_item } =
     restaurantAuthStore();
-  const [menuItems, setMenuItems] = useState(initialMenuItems2);
+  const [menuItems, setMenuItems] = useState(initialMenuItems);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
   const [currentView, setCurrentView] = useState("list");
@@ -113,7 +70,6 @@ function MenuManagementRest() {
   };
 
   const handleDeleteItem = async (itemId) => {
-    // console.log("the mneu item id is: ", itemId);
     const items = await delete_menu_item(itemId);
     if (items !== false) {
       setMenuItems((prev) => prev.filter((item) => item.id !== itemId));
@@ -121,18 +77,24 @@ function MenuManagementRest() {
     } else {
     }
   };
+  const avgPrice =
+    menuItems.length > 0
+      ? (
+          menuItems.reduce((sum, item) => sum + parseFloat(item.price), 0) /
+          menuItems.length
+        ).toFixed(2)
+      : "0.00";
 
-  const handleToggleStatus = (itemId) => {
-    setMenuItems((prev) =>
-      prev.map((item) =>
-        item.id === itemId
-          ? {
-              ...item,
-              status: item.status === "active" ? "inactive" : "active",
-            }
-          : item
-      )
-    );
+  const handleToggleStatus = async (itemId) => {
+    const item = menuItems.find((item) => item.menu_item_id === itemId);
+    const updatedItem = {
+      ...item,
+      is_available: !item.is_available,
+    };
+    const items = await edit_menu_item(updatedItem, itemId);
+    if (item != false) {
+      setMenuItems(items);
+    }
   };
 
   if (currentView === "add") {
@@ -213,7 +175,6 @@ function MenuManagementRest() {
             key={item.id}
             className="hover:shadow-lg transition-shadow duration-200 bg-gray-800 border-gray-700"
           >
-            {console.log(item.name)}
             <div className="relative">
               <img
                 src={item.menu_category_image_url}
@@ -268,7 +229,7 @@ function MenuManagementRest() {
                   className="border-gray-600 text-gray-300"
                   onClick={() => handleToggleStatus(item.menu_item_id)}
                 >
-                  {item.status === "active" ? (
+                  {item.is_available === true ? (
                     <EyeOff className="h-4 w-4" />
                   ) : (
                     <Eye className="h-4 w-4" />
@@ -309,7 +270,7 @@ function MenuManagementRest() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-400">
-              {menuItems.filter((item) => item.status === "active").length}
+              {menuItems.filter((item) => item.is_available === true).length}
             </div>
           </CardContent>
         </Card>
@@ -332,7 +293,9 @@ function MenuManagementRest() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-400">$13.49</div>
+            <div className="text-2xl font-bold text-orange-400">
+              ${avgPrice}
+            </div>
           </CardContent>
         </Card>
       </div>

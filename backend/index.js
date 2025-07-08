@@ -3,13 +3,14 @@ import dotenv from "dotenv";
 import cors from "cors";
 import http from "http"; // Import http module
 import { Server } from "socket.io"; // Import Server from socket.io
-import customerRoute from "./routes/customerRoute.js";
-
+import customerAuthRoute from "./routes/customerRoute.js";
+import customerRestaurantRoutes from "./customer/restaurant/restaurantRoutes.js";
+import customerCartRoutes from "./customer/cart/cartRoutes.js";
+import router from "./rider/riderRoutes.js";
 import restaurantRoute from "./routes/restaurantRoute.js";
 import menuRoutes from "./menu-management/menuRoutes.js"; // Import the menu routes
-import riderAuthRoute from "./routes/riderAuthRoute.js";
-import riderRoutes from "./rider/riderRoutes.js";
 import cookieParser from "cookie-parser";
+import riderAuthRoute from "./routes/riderAuthRoute.js"
 
 dotenv.config();
 
@@ -41,16 +42,19 @@ app.use(
 );
 
 // Register routes
-console.log("Registering customer routes...");
-app.use("/api/customer", customerRoute);
+console.log("Registering customer authentication routes...");
+app.use("/api/customer", customerAuthRoute);
+console.log("Registering customer restaurant routes...");
+app.use("/api/customer", customerRestaurantRoutes);
+console.log("Registering customer cart routes...");
+app.use("/api/customer", customerCartRoutes);
 console.log("Registering rider routes...");
 app.use("/api/rider", riderAuthRoute);
-app.use("/api/rider/data", riderRoutes);
+app.use("/api/rider/data", router);
 console.log("Registering restaurant routes...");
 app.use("/api/restaurant", restaurantRoute);
 console.log("Registering menu routes...");
 app.use("/api/menu", menuRoutes); // Register the menu routes
-
 
 const PORT = process.env.PORT || 5001;
 server.listen(PORT, () => {

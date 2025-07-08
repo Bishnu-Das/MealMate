@@ -28,7 +28,7 @@ export const signup = async (req, res) => {
     );
     if (latitude !== null && longitude !== null) {
       await pool.query(
-        "INSERT INTO user_locations (user_id, latitude, longitude) VALUES ($1, $2, $3)",
+        "INSERT INTO user_locations (user_id, latitude, longitude, is_primary) VALUES ($1, $2, $3, true)",
         [newUser.rows[0].user_id, latitude, longitude]
       );
     }
@@ -94,63 +94,7 @@ export const logout = async (req, res) => {
     res.status(500).json({ message: "internal server error" });
   }
 };
-export const getNearbyRestaurants = async (req, res) => {
-  try {
-    const id = req.user.id;
-    const radius = 5000;
 
-    let result = await pool.query(
-      `
-      SELECT r.restaurant_id,r.name,r.phone,r.email,r.average_rating, 
-        ST_Distance(
-          ST_MakePoint(rl.longitude, rl.latitude)::GEOGRAPHY,
-          ST_MakePoint(ul.longitude, ul.latitude)::GEOGRAPHY
-        ) AS distance
-      FROM restaurants r
-      JOIN user_locations rl ON rl.restaurant_id = r.restaurant_id
-      JOIN user_locations ul ON ul.user_id = $1 AND ul.is_primary = true
-      WHERE ST_DWithin(
-        ST_MakePoint(rl.longitude, rl.latitude)::GEOGRAPHY,
-        ST_MakePoint(ul.longitude, ul.latitude)::GEOGRAPHY,
-        $2
-      )
-      ORDER BY distance
-      LIMIT 30
-      `,
-      [id, radius]
-    );
-
-    // If no restaurants found in 5km, try 10km
-    if (result.rows.length === 0) {
-      const radius2 = 10000;
-      result = await pool.query(
-        `
-        SELECT r.restaurant_id,r.name,r.phone,r.email,r.average_rating, 
-          ST_Distance(
-            ST_MakePoint(rl.longitude, rl.latitude)::GEOGRAPHY,
-            ST_MakePoint(ul.longitude, ul.latitude)::GEOGRAPHY
-          ) AS distance
-        FROM restaurants r
-        JOIN user_locations rl ON rl.restaurant_id = r.restaurant_id
-        JOIN user_locations ul ON ul.user_id = $1 AND ul.is_primary = true
-        WHERE ST_DWithin(
-          ST_MakePoint(rl.longitude, rl.latitude)::GEOGRAPHY,
-          ST_MakePoint(ul.longitude, ul.latitude)::GEOGRAPHY,
-          $2
-        )
-        ORDER BY distance
-        LIMIT 30
-        `,
-        [id, radius2]
-      );
-    }
-
-    res.status(200).json(result.rows);
-  } catch (err) {
-    console.error("Error in getNearbyRestaurants:", err.message);
-    res.status(500).json({ message: "Internal server error" });
-  }
-};
 export const changePassword = async (req, res) => {
   const id = req.user.id;
   const { prevPassword, newPassword } = req.body;
@@ -203,6 +147,20 @@ export const varifyUser = async (req, res) => {
   }
 };
 
+export const getProfile = async (req, res) => {
+  const id = req.user.id;
+  try {
+    const result = await pool.query(
+      "SELECT * FROM users WHERE user_id =  $1",
+      [id]
+    );
+    res.status(200).json(result.rows);
+  } catch (err) {
+    console.error("Error in get profile:", err.message);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
 export const updateProfile = async (req, res) => {
   const id = req.user.id;
 
@@ -249,85 +207,6 @@ export const updateProfile = async (req, res) => {
     });
   } catch (err) {
     console.error("Error in updateProfile:", err.message);
-    res.status(500).json({ message: "Internal server error" });
-  }
-};
-
-export const getRestaurants = async (req, res) => {
-  try {
-    const result = await pool.query("SELECT * FROM restaurants LIMIT 30");
-    res.status(200).json(result.rows);
-  } catch (err) {
-    console.error("Error in get restaurant:", err.message);
-    res.status(500).json({ message: "Internal server error" });
-  }
-};
-
-export const getProfile = async (req, res) => {
-  const id = req.user.id;
-  try {
-    const result = await pool.query("SELECT * FROM users WHERE user_id =  $1", [
-      id,
-    ]);
-    res.status(200).json(result.rows);
-  } catch (err) {
-    console.error("Error in get restaurant:", err.message);
-    res.status(500).json({ message: "Internal server error" });
-  }
-};
-
-export const getCategories = async (req, res) => {
-  try {
-    const result = await pool.query("SELECT * FROM menu_categories LIMIT 30");
-    res.status(200).json(result.rows);
-  } catch (err) {
-    console.error("Error in get restaurant:", err.message);
-    res.status(500).json({ message: "Internal server error" });
-  }
-};
-
-export const getMenus = async (req, res) => {
-  try {
-    const result = await pool.query("SELECT * FROM menu_items LIMIT 30");
-    res.status(200).json(result.rows);
-  } catch (err) {
-    console.error("Error in get restaurant:", err.message);
-    res.status(500).json({ message: "Internal server error" });
-  }
-};
-
-export const getMenuItem = async (req, res) => {
-  const id = req.params.id;
-  try {
-    const result = await pool.query(
-      "SELECT * FROM menu_items where menu_item_id = $1",
-      [id]
-    );
-    res.status(200).json(result.rows);
-  } catch (err) {
-    console.error("Error in get restaurant:", err.message);
-    res.status(500).json({ message: "Internal server error" });
-  }
-};
-
-export const getRestaurant = async (req, res) => {
-  const id = req.params.id;
-  try {
-    const resResult = await pool.query(
-      "SELECT * FROM restaurants where restaurant_id=$1",
-      [id]
-    );
-    const menuItems = await pool.query(
-      "SELECT mi.menu_item_id,mi.category_id,mi.name as menu_name, mi.description, mi.price, mi.is_available, mi.menu_item_image_url,mc.restaurant_id, mc.name category_name, mc.menu_category_image_url FROM menu_items mi join menu_categories mc on (mi.category_id = mc.category_id) WHERE restaurant_id = $1",
-      [id]
-    );
-
-    res.json({
-      restaruntDetails: resResult.rows[0],
-      menuItems: menuItems.rows,
-    });
-  } catch (err) {
-    console.error("Error in get getRestaurnt:", err.message);
     res.status(500).json({ message: "Internal server error" });
   }
 };

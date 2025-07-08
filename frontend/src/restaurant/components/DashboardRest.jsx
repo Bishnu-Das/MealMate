@@ -103,7 +103,7 @@ const getStatusColor = (status) => {
   }
 };
 
-const DashboardRest = () => {
+const DashboardRest = ({ setActiveTab, setCurrentView }) => {
   const { authRestaurant } = restaurantAuthStore();
   return (
     <div className="p-6 space-y-6 bg-gray-900 min-h-screen text-gray-100">
@@ -211,6 +211,10 @@ const DashboardRest = () => {
             <Button
               variant="secondary"
               className="bg-white text-orange-600 hover:bg-gray-100"
+              onClick={() => {
+                setActiveTab("menu");
+                setCurrentView && setCurrentView("add");
+              }}
             >
               Add Item
             </Button>
@@ -230,6 +234,7 @@ const DashboardRest = () => {
             <Button
               variant="secondary"
               className="bg-white text-green-600 hover:bg-gray-100"
+              onClick={() => setActiveTab("profile")}
             >
               Update Hours
             </Button>
@@ -247,6 +252,7 @@ const DashboardRest = () => {
             <Button
               variant="secondary"
               className="bg-white text-blue-600 hover:bg-gray-100"
+              onClick={() => setActiveTab("analytics")}
             >
               View Reports
             </Button>

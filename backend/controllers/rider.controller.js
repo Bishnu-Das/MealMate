@@ -39,7 +39,7 @@ export const signup = async (req, res) => {
     const userId = newUser.rows[0].user_id;
 
     // Insert into rider_profiles table
-    const new_rider = await pool.query(
+    await pool.query(
       `INSERT INTO rider_profiles (user_id, vehicle_type, current_location, is_available)
        VALUES ($1, $2, $3, $4) RETURNING *`,
       [userId, vehicle_type, current_location, is_available]
@@ -51,7 +51,6 @@ export const signup = async (req, res) => {
     res.status(201).json({
       message: "Rider registered successfully",
       user_id: userId,
-      rider_id: new_rider.rows[0].rider_id,
       name: newUser.rows[0].name,
       email: newUser.rows[0].email,
       phone_number: newUser.rows[0].phone_number,
@@ -106,7 +105,6 @@ export const login = async (req, res) => {
     res.status(200).json({
       message: "Login successful",
       user_id: userId,
-      rider_id: profile.rows[0].rider_id,
       name: rider.rows[0].name,
       email: rider.rows[0].email,
       phone_number: rider.rows[0].phone_number,
@@ -137,6 +135,7 @@ export const varify = async (req, res) => {
     res.status(500).json({ message: "internal server error" });
   }
 };
+
 
 // export const getDeliveryHistory = async (req, res) => {
 //   try {

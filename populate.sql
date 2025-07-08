@@ -1,11 +1,13 @@
 -- Seed Data Script
 
 -- Users
-INSERT INTO users (user_id, name, email, password, phone_number, role_id) VALUES (1, 'Susan Ray', 'paul36@gmail.com', 'hashed_password', '768-749-5675', 'customer');
-INSERT INTO users (user_id, name, email, password, phone_number, role_id) VALUES (2, 'Michael Hampton', 'laura04@gmail.com', 'hashed_password', '(298)772-6719x591', 'rider');
-INSERT INTO users (user_id, name, email, password, phone_number, role_id) VALUES (3, 'Ryan White', 'amanda66@lowe.net', 'hashed_password', '(300)992-8326', 'customer');
-INSERT INTO users (user_id, name, email, password, phone_number, role_id) VALUES (4, 'Tracy Boyd', 'larsenchristian@yahoo.com', 'hashed_password', '413.855.1738', 'rider');
-INSERT INTO users (user_id, name, email, password, phone_number, role_id) VALUES (5, 'Elizabeth Fry', 'pamela20@green.com', 'hashed_password', '733-208-3124', 'rider');
+INSERT INTO users (user_id, name, email, password, phone_number, role_id) VALUES
+(1, 'Susan Ray', 'paul36@gmail.com', 'hashed_password', '768-749-5675', 'customer'),
+(2, 'Michael Hampton', 'laura04@gmail.com', 'hashed_password', '298-772-6719', 'rider'),
+(3, 'Ryan White', 'amanda66@lowe.net', 'hashed_password', '300-992-8326', 'customer'),
+(4, 'Tracy Boyd', 'larsenchristian@yahoo.com', 'hashed_password', '413-855-1738', 'rider'),
+(5, 'Elizabeth Fry', 'pamela20@green.com', 'hashed_password', '733-208-3124', 'rider');
+
 
 -- Rider Profiles
 INSERT INTO rider_profiles (user_id, vehicle_type, current_location, is_available) VALUES (2, 'bike', 'USNV Booker
@@ -23,11 +25,14 @@ INSERT INTO user_locations (location_id, user_id, street, city, postal_code, lat
 INSERT INTO user_locations (location_id, user_id, street, city, postal_code, latitude, longitude, addr_link, is_primary) VALUES (5, 2, '4637 Alexis Isle Apt. 403', 'Port Mandybury', '85357', 51.06911149, -119.15858999, 'https://reyes.net/', true);
 
 -- Restaurants
-INSERT INTO restaurants (restaurant_id, name, password, phone, email, location_id, average_rating) VALUES (1, 'Black, Davis and Simon', 'hashed_password', '489.159.3776', 'sandra22@hotmail.com', 1, 3.32);
-INSERT INTO restaurants (restaurant_id, name, password, phone, email, location_id, average_rating) VALUES (2, 'Atkinson, Price and Williams', 'hashed_password', '598-533-6698x417', 'randallmcintyre@gutierrez-carroll.com', 2, 3.77);
-INSERT INTO restaurants (restaurant_id, name, password, phone, email, location_id, average_rating) VALUES (3, 'Fisher PLC', 'hashed_password', '001-591-386-3262x276', 'millerdiana@yahoo.com', 3, 4.34);
-INSERT INTO restaurants (restaurant_id, name, password, phone, email, location_id, average_rating) VALUES (4, 'Robles LLC', 'hashed_password', '001-660-697-9159x15752', 'suzanne68@navarro.biz', 4, 3.48);
-INSERT INTO restaurants (restaurant_id, name, password, phone, email, location_id, average_rating) VALUES (5, 'Cook LLC', 'hashed_password', '639-438-0388', 'kevin36@robinson.com', 5, 4.92);
+INSERT INTO restaurants (restaurant_id, name, password, phone, email, location_id, average_rating, image_url) VALUES
+(1, 'Black, Davis and Simon', 'hashed_password', '489-159-3776', 'sandra22@hotmail.com', 1, 3.32, 'burger-deluxe.jpg'),
+(2, 'Atkinson, Price and Williams', 'hashed_password', '598-533-6698', 'randallmcintyre@gutierrez-carroll.com', 2, 3.77, 'caesar-salad.jpg'),
+(3, 'Fisher PLC', 'hashed_password', '591-386-3262', 'millerdiana@yahoo.com', 3, 4.34, 'chocolate-lava-cake.jpg'),
+(4, 'Robles LLC', 'hashed_password', '660-697-9159', 'suzanne68@navarro.biz', 4, 3.48, 'pasta-carbonara.jpg'),
+(5, 'Cook LLC', 'hashed_password', '639-438-0388', 'kevin36@robinson.com', 5, 4.92, 'pizza-margherita.jpg');
+
+
 
 -- Restaurant Hours
 INSERT INTO restaurant_hours (restaurant_id, day_of_week, open_time, close_time) VALUES (1, 'Mon', '10:00', '19:00');

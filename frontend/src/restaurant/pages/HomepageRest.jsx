@@ -26,7 +26,9 @@ function HomepageRest() {
   const renderContent = () => {
     switch (activeTab) {
       case "dashboard":
-        return <DashboardRest />;
+        return (
+          <DashboardRest activeTab={activeTab} setActiveTab={setActiveTab} />
+        );
       case "menu":
         return <MenuManagementRest />;
       case "orders":

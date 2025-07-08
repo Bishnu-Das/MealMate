@@ -15,7 +15,7 @@ export const useRestaurantStore = create((set, get) => ({
       let res;
 
       if (authUser) {
-        res = await axiosInstance.get("customer/nearby_restaurant");
+        res = await axiosInstance.get("customer/nearby_restaurants");
       } else {
         res = await axiosInstance.get("customer/getRestaurants");
       }

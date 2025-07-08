@@ -13,6 +13,8 @@ import {
   logout,
   varify,
   get_menu,
+  getRestaurantProfile,
+  editProfile,
 } from "../controllers/restaurant.controller.js";
 
 const router = express.Router();
@@ -43,5 +45,11 @@ router.put(
   changePassword
 );
 router.get("/get_menu_items", authorization, authorizeRoles(role), get_menu);
-
+router.get(
+  "/get_restaurant_profile",
+  authorization,
+  authorizeRoles(role),
+  getRestaurantProfile
+);
+router.post("/edit_profile", authorization, authorizeRoles(role), editProfile);
 export default router;

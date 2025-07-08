@@ -22,6 +22,7 @@ function Profile() {
       setFormData({
         name: authUser.name || "",
         phone: authUser.phone || "",
+        email: authUser.email || "",
         location: {
           lat: authUser.location?.lat || null,
           lng: authUser.location?.lng || null,

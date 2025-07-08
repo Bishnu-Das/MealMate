@@ -9,7 +9,7 @@ import {
   logout,
   varify,
 } from "../controllers/rider.controller.js";
-
+//import { changePassword } from "../controllers/auth.controller.js";
 
 const router = express.Router();
 
@@ -25,5 +25,10 @@ router.get(
   authorizeRoles(role),
   varify
 );
-
-export default router;
+// router.get(
+//   "/get_restaurant_profile",
+//   authorization,
+//   authorizeRoles(role),
+//   getRestaurantProfile
+// );
+ export default router;
