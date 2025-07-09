@@ -10,8 +10,10 @@ import {
 } from "../../restaurant/components/ui/sheet";
 import { Badge } from "../../restaurant/components/ui/badge";
 import { Separator } from "../../restaurant/components/ui/separator";
+import { useNavigate } from "react-router-dom";
 
 export function CartSidebar({ cartItems, onUpdateQuantity, onRemoveItem }) {
+  const navigate = useNavigate();
   const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
   const subtotal = cartItems.reduce(
     (sum, item) => sum + item.price * item.quantity,
@@ -39,8 +41,7 @@ export function CartSidebar({ cartItems, onUpdateQuantity, onRemoveItem }) {
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2 text-white">
             <ShoppingBag className="h-5 w-5" />
-            Your Cart
-             ({totalItems} items)
+            Your Cart ({totalItems} items)
           </SheetTitle>
         </SheetHeader>
 
@@ -107,7 +108,9 @@ export function CartSidebar({ cartItems, onUpdateQuantity, onRemoveItem }) {
                           variant="ghost"
                           size="sm"
                           className="h-8 w-8 p-0 text-red-500 hover:text-red-600"
-                          onClick={() => onRemoveItem(item.cart_item_id)}
+                          onClick={() =>
+                            onRemoveItem(item.cart_item_id)
+                          }
                         >
                           <X className="h-3 w-3" />
                         </Button>
@@ -122,17 +125,17 @@ export function CartSidebar({ cartItems, onUpdateQuantity, onRemoveItem }) {
           {/* Order Summary */}
           {cartItems.length > 0 && (
             <div className="border-t border-gray-700 pt-4 mt-4">
-              <div className="space-y-2 mb-4">
-                <div className="flex justify-between text-sm">
+              <div className="space-y-2 mb-4 text-sm">
+                <div className="flex justify-between">
                   <span>Subtotal</span>
                   <span>${subtotal.toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between text-sm">
+                <div className="flex justify-between">
                   <span>Delivery Fee</span>
                   <span>${deliveryFee.toFixed(2)}</span>
                 </div>
                 <Separator className="bg-gray-700" />
-                <div className="flex justify-between font-semibold">
+                <div className="flex justify-between font-semibold text-base">
                   <span>Total</span>
                   <span>${total.toFixed(2)}</span>
                 </div>
@@ -141,6 +144,7 @@ export function CartSidebar({ cartItems, onUpdateQuantity, onRemoveItem }) {
               <Button
                 className="w-full bg-pink-600 hover:bg-pink-700 text-white"
                 size="lg"
+                onClick={() => navigate("/checkout")}
               >
                 Proceed to Checkout
               </Button>

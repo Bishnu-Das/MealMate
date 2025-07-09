@@ -52,7 +52,7 @@ CREATE TABLE rider_profiles (
 CREATE TYPE weekday AS ENUM ('Sun','Mon','Tue','Wed','Thu','Fri','Sat');
 CREATE TYPE cart_status AS ENUM ('active', 'abandoned', 'completed');
 CREATE TYPE order_status AS ENUM ('pending', 'preparing', 'out_for_delivery', 'delivered', 'cancelled');
-CREATE TYPE payment_method AS ENUM ('card','paypal','bkash','rocket');
+CREATE TYPE payment_method AS ENUM ('cod', 'bkash', 'nagad');
 CREATE TYPE delivery_status AS ENUM ('pending','in_transit','delivered');
 CREATE TYPE notification_target AS ENUM ('user','rider','restaurant');
 CREATE TYPE notification_type AS ENUM ('order_update','promotion','delivery_status');

@@ -11,6 +11,8 @@ import restaurantRoute from "./routes/restaurantRoute.js";
 import menuRoutes from "./menu-management/menuRoutes.js"; // Import the menu routes
 import cookieParser from "cookie-parser";
 import riderAuthRoute from "./routes/riderAuthRoute.js"
+import customerOrderRoutes from "./customer/order/orderRoutes.js";
+import customerPaymentRoutes from "./customer/order/paymentRoutes.js";
 
 dotenv.config();
 
@@ -55,6 +57,10 @@ console.log("Registering restaurant routes...");
 app.use("/api/restaurant", restaurantRoute);
 console.log("Registering menu routes...");
 app.use("/api/menu", menuRoutes); // Register the menu routes
+console.log("Registering customer order routes...");
+app.use("/api/customer/order", customerOrderRoutes);
+console.log("Registering customer payment routes...");
+app.use("/api/customer/payment", customerPaymentRoutes);
 
 const PORT = process.env.PORT || 5001;
 server.listen(PORT, () => {
