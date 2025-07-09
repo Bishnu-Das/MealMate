@@ -19,10 +19,14 @@ import DeliveryHistoryPage from "./rider/pages/DeliveryHistoryPage";
 import OrderDetailsPage from "./rider/pages/OrderDetailsPage";
 import ProfilePageRider from "./rider/pages/ProfilePageRider";
 import { Toaster } from "react-hot-toast";
+import OrderHistoryPage from './pages/OrderHistoryPage';
+
 
 import Navbar from "./Components/skeleton/Navbar";
 import HomepageRest from "./restaurant/pages/HomepageRest";
 import RestaurantProfie from "./pages/RestaurantProfile";
+import CheckoutPage from "./pages/CheckoutPage";
+import SimulatePaymentGateway from "./pages/SimulatePaymentGateway";
 
 import { element } from "prop-types";
 
@@ -66,6 +70,9 @@ function App() {
           />
           <Route path="/restaurants" element={<RestaurantPage />} />
           <Route path="/restaurant/:id" element={<RestaurantProfie />} />
+          <Route path="/checkout" element={<CheckoutPage />} />
+          <Route path="/order-history" element={<OrderHistoryPage />} />
+          <Route path="/simulate-payment-gateway" element={<SimulatePaymentGateway />} />
 
           {/* Restaurant */}
           {/* <Route

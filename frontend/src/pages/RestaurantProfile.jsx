@@ -1,4 +1,4 @@
-import { use, useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Search } from "lucide-react";
 
 import { Input } from "../restaurant/components/ui/input";
@@ -7,13 +7,15 @@ import { FoodItem } from "../Components/restprof/FoodItem";
 import { CartSidebar } from "../Components/restprof/CartSidebar";
 import { MenuCategories } from "../Components/restprof/MenuCategories";
 import { axiosInstance } from "../../lib/axios";
-import { useParams } from "react-router-dom";
+import { useCartStore } from "../store/cartStore";
+import { useNavigate, useParams } from "react-router-dom";
 import Navbar from "../Components/skeleton/Navbar";
 
 export default function Restaurant() {
   const [activeCategory, setActiveCategory] = useState("Popular");
   const [searchQuery, setSearchQuery] = useState("");
-  const [cartItems, setCartItems] = useState([]);
+  const { cartItems, addToCart, updateQuantity, removeFromCart, setCartItems: setCartItemsFromStore } = useCartStore();
+  const navigate = useNavigate();
   const [darkMode, setDarkMode] = useState(false);
   const [menuItems, setmenuItems] = useState([]);
   const [menuCategories, setMenuCategories] = useState([]);
@@ -22,14 +24,14 @@ export default function Restaurant() {
   const { id } = useParams();
   console.log("rest id: ", id);
 
-  const fetchCart = async () => {
+  const fetchCart = useCallback(async () => {
     try {
       const res = await axiosInstance.get("/customer/cart");
-      setCartItems(res.data.cart.sort((a, b) => a.cart_item_id - b.cart_item_id));
+      setCartItemsFromStore(res.data.cart.sort((a, b) => a.cart_item_id - b.cart_item_id));
     } catch (err) {
       console.error("Error fetching cart:", err);
     }
-  };
+  }, [setCartItemsFromStore]);
 
   useEffect(() => {
     axiosInstance
@@ -75,8 +77,7 @@ export default function Restaurant() {
         restaurant_id: restaurant.restaurant_id,
         quantity: 1,
       });
-      console.log(res.data.message);
-      fetchCart(); // Re-fetch cart after adding item
+      addToCart({ ...item, quantity: 1, cart_item_id: res.data.item.cart_item_id, restaurant_name: restaurant.name, restaurant_id: restaurant.restaurant_id });
     } catch (err) {
       console.error("Error adding to cart:", err);
     }
@@ -86,15 +87,14 @@ export default function Restaurant() {
     try {
       if (quantity === 0) {
         await axiosInstance.delete(`/customer/cart/${menu_item_id}`);
-        fetchCart(); // Re-fetch cart after deleting item
+        removeFromCart(menu_item_id);
       } else {
-        // Use the existing add_cart endpoint for updates
         await axiosInstance.post("/customer/add_cart", {
           menu_item_id: menu_item_id,
-          restaurant_id: restaurant.restaurant_id, // Ensure restaurant_id is available
+          restaurant_id: restaurant.restaurant_id,
           quantity: quantity,
         });
-        fetchCart(); // Re-fetch cart after updating item
+        updateQuantity(menu_item_id, quantity);
       }
     } catch (err) {
       console.error("Error updating cart quantity:", err);
@@ -102,9 +102,10 @@ export default function Restaurant() {
   };
 
   const handleRemoveItem = async (cart_item_id) => {
+    console.log("Attempting to remove item with cart_item_id:", cart_item_id);
     try {
       await axiosInstance.delete(`/customer/cart/${cart_item_id}`);
-      fetchCart(); // Re-fetch cart after removing item
+      removeFromCart(cart_item_id);
     } catch (err) {
       console.error("Error removing from cart:", err);
     }

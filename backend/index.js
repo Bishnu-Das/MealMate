@@ -10,8 +10,15 @@ import router from "./rider/riderRoutes.js";
 import restaurantRoute from "./routes/restaurantRoute.js";
 import menuRoutes from "./menu-management/menuRoutes.js"; // Import the menu routes
 import cookieParser from "cookie-parser";
-import riderAuthRoute from "./routes/riderAuthRoute.js";
-import restaurantOrder from "./restaurants/order/orderRoutes.js";
+<<<<<<< HEAD
+import riderAuthRoute from "./routes/riderAuthRoute.js"
+import customerOrderRoutes from "./customer/order/orderRoutes.js";
+import customerPaymentRoutes from "./customer/order/paymentRoutes.js";
+=======
+import riderAuthRoute from "./routes/riderAuthRoute.js"
+import customerOrderRoutes from "./customer/order/orderRoutes.js";
+import customerPaymentRoutes from "./customer/order/paymentRoutes.js";
+>>>>>>> 887bdf8011a420a2acfa558ce251a7a09ea0a796
 
 dotenv.config();
 
@@ -56,6 +63,10 @@ console.log("Registering restaurant routes...");
 app.use("/api/restaurant", restaurantRoute);
 console.log("Registering menu routes...");
 app.use("/api/menu", menuRoutes); // Register the menu routes
+console.log("Registering customer order routes...");
+app.use("/api/customer/order", customerOrderRoutes);
+console.log("Registering customer payment routes...");
+app.use("/api/customer/payment", customerPaymentRoutes);
 
 app.use("/api/restaurant", restaurantOrder); //restaurant order management
 
