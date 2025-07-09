@@ -1,4 +1,5 @@
 import pool from "../db.js";
+import { io } from '../index.js';
 
 export const getDashboardData = async (req, res) => {
   try {
@@ -26,7 +27,7 @@ export const getDashboardData = async (req, res) => {
       JOIN restaurants r ON o.restaurant_id = r.restaurant_id
       JOIN users cu ON o.user_id = cu.user_id
       JOIN deliveries d ON o.order_id = d.order_id
-      WHERE o.status = 'pending'`
+      WHERE d.status = 'pending'`
     );
 
     // Fetch assigned order with detailed information
@@ -47,7 +48,7 @@ export const getDashboardData = async (req, res) => {
       JOIN deliveries d ON o.order_id = d.order_id
       JOIN restaurants r ON o.restaurant_id = r.restaurant_id
       JOIN users cu ON o.user_id = cu.user_id
-      WHERE o.rider_id = $1 AND o.status IN ('preparing', 'out_for_delivery')`,
+      WHERE o.rider_id = $1 AND o.status IN ('preparing', 'ready_for_pickup', 'out_for_delivery')`,
       [riderId]
     );
 
@@ -177,7 +178,7 @@ export const acceptOrder = async (req, res) => {
 
     // Check if the rider already has an active order (status 'preparing' or 'out_for_delivery')
     const activeOrderCheck = await pool.query(
-      "SELECT order_id FROM orders WHERE rider_id = $1 AND status IN ('preparing', 'out_for_delivery')",
+      "SELECT order_id FROM orders WHERE rider_id = $1 AND status IN ('preparing', 'ready_for_pickup', 'out_for_delivery')",
       [riderId]
     );
 
@@ -186,13 +187,36 @@ export const acceptOrder = async (req, res) => {
     }
 
     const updatedOrder = await pool.query(
-      "UPDATE orders SET rider_id = $1, status = 'preparing' WHERE order_id = $2 AND status = 'pending' RETURNING *",
+      "UPDATE orders SET rider_id = $1, status = 'out_for_delivery' WHERE order_id = $2 AND status = 'ready_for_pickup' RETURNING *",
       [riderId, orderId]
     );
 
     if (updatedOrder.rows.length === 0) {
-      return res.status(404).json({ message: "Order not found or not pending" });
+      return res.status(404).json({ message: "Order not found or not ready for pickup" });
     }
+
+    await pool.query(
+      "UPDATE deliveries SET status = 'in_transit' WHERE order_id = $1",
+      [orderId]
+    );
+
+    // Fetch rider profile for notification
+    const riderProfileResult = await pool.query(
+      "SELECT user_id, name, phone_number FROM users WHERE user_id = $1",
+      [riderId]
+    );
+    const riderProfile = riderProfileResult.rows[0];
+
+    // Fetch order details to get customer_id and restaurant_id
+    const orderDetailsResult = await pool.query(
+      "SELECT user_id, restaurant_id FROM orders WHERE order_id = $1",
+      [orderId]
+    );
+    const { user_id: customerId, restaurant_id: restaurantId } = orderDetailsResult.rows[0];
+
+    // Emit order accepted event to restaurant and customer
+    io.to(`restaurant_${restaurantId}`).emit('order_accepted', { orderId, riderProfile });
+    io.to(`customer_${customerId}`).emit('order_accepted', { orderId, riderProfile });
 
     res.status(200).json({ message: "Order accepted successfully", order: updatedOrder.rows[0] });
   } catch (err) {

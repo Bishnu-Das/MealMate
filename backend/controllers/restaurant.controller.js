@@ -1,6 +1,7 @@
 import pool from "../db.js";
 import { generateToken } from "../utils/jwtGenerator.js";
 import bcrypt from "bcrypt";
+import { getIO } from '../socket.js';
 
 export const signup = async (req, res) => {
   try {
@@ -434,5 +435,90 @@ export const editProfile = async (req, res) => {
   } catch (err) {
     console.log("Error in editProfile controller:", err.message);
     res.status(500).json({ message: "Internal server error in editProfile" });
+  }
+};
+
+export const get_orders = async (req, res) => {
+  const restaurant_id = req.user.id;
+  try {
+    const orders = await pool.query(
+      `SELECT
+        o.order_id,
+        o.user_id AS customer_id,
+        u.name AS customer_name,
+        u.phone_number AS customer_phone,
+        o.total_amount,
+        o.status,
+        p.method_type AS payment_method,
+        d.dropoff_addr,
+        o.created_at,
+        o.rider_id,
+        r.name AS rider_name,
+        r.phone_number AS rider_phone,
+        JSON_AGG(oi.*) AS items
+      FROM orders o
+      JOIN users u ON o.user_id = u.user_id
+      LEFT JOIN users r ON o.rider_id = r.user_id
+      LEFT JOIN deliveries d ON o.order_id = d.order_id
+      LEFT JOIN payments p ON o.order_id = p.order_id
+      JOIN order_items oi ON o.order_id = oi.order_id
+      WHERE o.restaurant_id = $1
+      GROUP BY o.order_id, u.name, u.phone_number, r.name, r.phone_number, d.dropoff_addr, p.method_type
+      ORDER BY o.created_at DESC`,
+      [restaurant_id]
+    );
+    res.status(200).json(orders.rows);
+  } catch (err) {
+    console.error("Error in get_orders controller:", err.message);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const updateOrderStatus = async (req, res) => {
+  const { orderId } = req.params;
+  const { status } = req.body; // expecting 'preparing' or 'restaurant_rejected' or 'ready_for_pickup'
+  console.log(`Backend received update status request for order ${orderId} with status: ${status}`);
+
+  if (!['preparing', 'restaurant_rejected', 'ready_for_pickup'].includes(status)) {
+    return res.status(400).json({ message: 'Invalid status' });
+  }
+
+  const client = await pool.connect();
+
+  try {
+    await client.query('BEGIN');
+
+    const orderResult = await client.query(
+      'UPDATE orders SET status = $1 WHERE order_id = $2 RETURNING *',
+      [status, orderId]
+    );
+
+    if (orderResult.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    const order = orderResult.rows[0];
+
+    // Emit order status updated event to the restaurant
+    getIO().to(`restaurant_${order.restaurant_id}`).emit('order_status_updated', order);
+
+    if (status === 'ready_for_pickup') {
+        await client.query(
+            'UPDATE deliveries SET status = \'pending\' WHERE order_id = $1',
+            [orderId]
+        );
+      // Emit new delivery event to all riders
+      getIO().to('riders').emit('new_delivery', order);
+    }
+
+    await client.query('COMMIT');
+    res.status(200).json({ message: 'Order status updated successfully', order: order });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Error updating order status:', error);
+    res.status(500).send('Server error');
+  } finally {
+    client.release();
   }
 };

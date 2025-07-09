@@ -15,6 +15,8 @@ import {
   get_menu,
   getRestaurantProfile,
   editProfile,
+  updateOrderStatus,
+  get_orders,
 } from "../controllers/restaurant.controller.js";
 
 const router = express.Router();
@@ -52,4 +54,6 @@ router.get(
   getRestaurantProfile
 );
 router.post("/edit_profile", authorization, authorizeRoles(role), editProfile);
-export default router;
+router.put("/orders/:orderId/status", authorization, authorizeRoles(role), updateOrderStatus);
+router.get("/orders", authorization, authorizeRoles(role), get_orders);
+export { router };
