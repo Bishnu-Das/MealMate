@@ -17,6 +17,9 @@ import {
   ArrowDownRight,
 } from "lucide-react";
 import { restaurantAuthStore } from "../store/restaurantAuthStore";
+import { useEffect } from "react";
+import { useState } from "react";
+import { axiosInstance } from "../../../lib/axios";
 
 const statsCards = [
   {
@@ -53,40 +56,40 @@ const statsCards = [
   },
 ];
 
-const recentOrders = [
-  {
-    id: "#ORD-001",
-    customer: "John Doe",
-    items: "2x Margherita Pizza, 1x Coca Cola",
-    amount: "$28.50",
-    status: "preparing",
-    time: "5 min ago",
-  },
-  {
-    id: "#ORD-002",
-    customer: "Sarah Wilson",
-    items: "1x Chicken Burger, 1x Fries",
-    amount: "$18.99",
-    status: "ready",
-    time: "12 min ago",
-  },
-  {
-    id: "#ORD-003",
-    customer: "Mike Johnson",
-    items: "3x Pasta Carbonara",
-    amount: "$45.00",
-    status: "delivered",
-    time: "25 min ago",
-  },
-  {
-    id: "#ORD-004",
-    customer: "Emma Davis",
-    items: "2x Caesar Salad, 2x Lemonade",
-    amount: "$32.00",
-    status: "confirmed",
-    time: "3 min ago",
-  },
-];
+// const recentOrders = [
+//   {
+// id: "#ORD-001",
+// customer: "John Doe",
+// items: "2x Margherita Pizza, 1x Coca Cola",
+// amount: "$28.50",
+// status: "preparing",
+// time: "5 min ago",
+//   },
+//   {
+//     id: "#ORD-002",
+//     customer: "Sarah Wilson",
+//     items: "1x Chicken Burger, 1x Fries",
+//     amount: "$18.99",
+//     status: "ready",
+//     time: "12 min ago",
+//   },
+//   {
+//     id: "#ORD-003",
+//     customer: "Mike Johnson",
+//     items: "3x Pasta Carbonara",
+//     amount: "$45.00",
+//     status: "delivered",
+//     time: "25 min ago",
+//   },
+//   {
+//     id: "#ORD-004",
+//     customer: "Emma Davis",
+//     items: "2x Caesar Salad, 2x Lemonade",
+//     amount: "$32.00",
+//     status: "confirmed",
+//     time: "3 min ago",
+//   },
+// ];
 
 const getStatusColor = (status) => {
   switch (status) {
@@ -105,6 +108,26 @@ const getStatusColor = (status) => {
 
 const DashboardRest = ({ setActiveTab, setCurrentView }) => {
   const { authRestaurant } = restaurantAuthStore();
+
+  const [recentOrders, setRecentOrders] = useState([]);
+
+  const getRecentOrder = async () => {
+    try {
+      const response = await axiosInstance.get("/restaurant/recent_orders");
+      return response.data;
+    } catch (err) {
+      return [];
+    }
+  };
+
+  useEffect(() => {
+    const fetchOrders = async () => {
+      const orders = await getRecentOrder();
+      setRecentOrders(orders);
+    };
+    fetchOrders();
+  }, []);
+
   return (
     <div className="p-6 space-y-6 bg-gray-900 min-h-screen text-gray-100">
       {/* Stats Grid */}

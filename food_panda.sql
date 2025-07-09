@@ -113,7 +113,8 @@ CREATE TABLE orders (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP,
   delivered_at TIMESTAMP,
-  total_amount DECIMAL(10,2)
+  total_amount DECIMAL(10,2),
+  cart_id INT REFERENCES carts(cart_id)
 );
 
 CREATE TABLE order_items (
