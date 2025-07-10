@@ -13,6 +13,7 @@ import cookieParser from "cookie-parser";
 import riderAuthRoute from "./routes/riderAuthRoute.js"
 import customerOrderRoutes from "./customer/order/orderRoutes.js";
 import customerPaymentRoutes from "./customer/order/paymentRoutes.js";
+import reviewRoutes from "./review_rating/reviewRoutes.js";
 
 dotenv.config();
 
@@ -49,6 +50,8 @@ console.log("Registering customer order routes...");
 app.use("/api/customer/order", customerOrderRoutes);
 console.log("Registering customer payment routes...");
 app.use("/api/customer/payment", customerPaymentRoutes);
+console.log("Registering review routes...");
+app.use("/api/customer/review", reviewRoutes);
 
 const PORT = process.env.PORT || 5001;
 server.listen(PORT, () => {

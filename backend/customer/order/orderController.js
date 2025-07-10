@@ -97,7 +97,22 @@ export const getOrders = async (req, res) => {
   try {
     // Fetch all orders for the user
     const ordersResult = await pool.query(
-      'SELECT o.order_id, o.status, o.total_amount, o.created_at, r.name as restaurant_name, r.restaurant_id FROM orders o JOIN restaurants r ON o.restaurant_id = r.restaurant_id WHERE o.user_id = $1 ORDER BY o.created_at DESC',
+      `SELECT 
+        o.order_id, 
+        o.status, 
+        o.total_amount, 
+        o.created_at, 
+        o.rider_id, 
+        r.name as restaurant_name, 
+        r.restaurant_id, 
+        u.name as rider_name,
+        EXISTS(SELECT 1 FROM reviews WHERE user_id = o.user_id AND restaurant_id = o.restaurant_id AND order_id = o.order_id) as has_restaurant_review,
+        EXISTS(SELECT 1 FROM reviews WHERE user_id = o.user_id AND rider_id = o.rider_id AND order_id = o.order_id) as has_rider_review
+      FROM orders o 
+      JOIN restaurants r ON o.restaurant_id = r.restaurant_id 
+      LEFT JOIN users u ON o.rider_id = u.user_id 
+      WHERE o.user_id = $1 
+      ORDER BY o.created_at DESC`,
       [userId]
     );
     const orders = ordersResult.rows;

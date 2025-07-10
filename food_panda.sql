@@ -156,6 +156,7 @@ CREATE TABLE reviews (
   user_id INT REFERENCES users(user_id),
   restaurant_id INT REFERENCES restaurants(restaurant_id),
   rider_id INT REFERENCES rider_profiles(user_id),
+  order_id INT REFERENCES orders(order_id),
   rating DECIMAL(2,1) CHECK (rating >= 1.0 AND rating <= 5.0),
   comment TEXT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

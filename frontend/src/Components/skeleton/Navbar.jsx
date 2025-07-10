@@ -76,9 +76,12 @@ const Navbar = () => {
           <li>
             <Link to="/offers">Offers</Link>
           </li>
-          <li>
-            <Link to="/cart">Cart</Link>
-          </li>
+          
+          {authUser && (
+            <li>
+              <Link to="/order-history">Orders</Link>
+            </li>
+          )}
           {renderAuthButtons()}
         </ul>
 
@@ -109,11 +112,19 @@ const Navbar = () => {
               Offers
             </Link>
           </li>
-          <li>
-            <Link to="/cart" onClick={() => setMobileMenuOpen(false)}>
-              Cart
-            </Link>
-          </li>
+          
+
+          {authUser && (
+            <li>
+              <Link
+                to="/order-history"
+                onClick={() => setMobileMenuOpen(false)}
+                className="hover:underline"
+              >
+                Orders
+              </Link>
+            </li>
+          )}
 
           {authUser ? (
             <>

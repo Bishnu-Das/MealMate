@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { Loader } from "lucide-react";
 
@@ -25,17 +25,22 @@ import OrderHistoryPage from './pages/OrderHistoryPage';
 import Navbar from "./Components/skeleton/Navbar";
 import HomepageRest from "./restaurant/pages/HomepageRest";
 import RestaurantProfie from "./pages/RestaurantProfile";
+import RestaurantReviewsPage from "./pages/RestaurantReviewsPage";
 import CheckoutPage from "./pages/CheckoutPage";
 import SimulatePaymentGateway from "./pages/SimulatePaymentGateway";
 import { Toaster } from "./restaurant/components/ui/sonner";
 
+
 import { element } from "prop-types";
+import ChatButton from "./Components/ChatButton";
 
 function App() {
   const { authUser, checkAuth, isCheckingAuth } = userAuthStore();
   const { authRestaurant, checkAuthRestaurant, isCheckingRestaurant } =
     restaurantAuthStore();
   const { authrider, checkAuthRider, isCheckingAuthRider } = useRiderAuthStore();
+
+  const [isChatWindowOpen, setIsChatWindowOpen] = useState(false);
 
   useEffect(() => {
     checkAuth();
@@ -71,6 +76,7 @@ function App() {
           />
           <Route path="/restaurants" element={<RestaurantPage />} />
           <Route path="/restaurant/:id" element={<RestaurantProfie />} />
+          <Route path="/restaurant/:restaurantId/reviews" element={<RestaurantReviewsPage />} />
           <Route path="/checkout" element={<CheckoutPage />} />
           <Route path="/order-history" element={<OrderHistoryPage />} />
           <Route path="/simulate-payment-gateway" element={<SimulatePaymentGateway />} />
@@ -120,6 +126,7 @@ function App() {
             element={authrider ? <OrderDetailsPage /> : <Navigate to="/rider/login" />}
           />
         </Routes>
+        {authUser && <ChatButton onClick={() => setIsChatWindowOpen(true)} />}
     </div>
   );
 }
