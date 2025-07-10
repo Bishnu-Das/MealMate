@@ -10,15 +10,11 @@ import router from "./rider/riderRoutes.js";
 import restaurantRoute from "./routes/restaurantRoute.js";
 import menuRoutes from "./menu-management/menuRoutes.js"; // Import the menu routes
 import cookieParser from "cookie-parser";
-<<<<<<< HEAD
-import riderAuthRoute from "./routes/riderAuthRoute.js"
+import riderAuthRoute from "./routes/riderAuthRoute.js";
 import customerOrderRoutes from "./customer/order/orderRoutes.js";
 import customerPaymentRoutes from "./customer/order/paymentRoutes.js";
-=======
-import riderAuthRoute from "./routes/riderAuthRoute.js"
-import customerOrderRoutes from "./customer/order/orderRoutes.js";
-import customerPaymentRoutes from "./customer/order/paymentRoutes.js";
->>>>>>> 887bdf8011a420a2acfa558ce251a7a09ea0a796
+import restaurantOrder from "./restaurants/order/orderRoutes.js";
+import restaurnatStat from "./restaurants/stats/statsRoutes.js";
 
 dotenv.config();
 
@@ -69,6 +65,8 @@ console.log("Registering customer payment routes...");
 app.use("/api/customer/payment", customerPaymentRoutes);
 
 app.use("/api/restaurant", restaurantOrder); //restaurant order management
+
+app.use("/api/restaurant/stats", restaurnatStat); // for fetching restaurnant statistics
 
 const PORT = process.env.PORT || 5001;
 server.listen(PORT, () => {

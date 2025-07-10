@@ -21,40 +21,40 @@ import { useEffect } from "react";
 import { useState } from "react";
 import { axiosInstance } from "../../../lib/axios";
 
-const statsCards = [
-  {
-    title: "Today's Revenue",
-    value: "$1,247",
-    change: "+12.5%",
-    changeType: "increase",
-    icon: DollarSign,
-    description: "vs yesterday",
-  },
-  {
-    title: "Orders Today",
-    value: "47",
-    change: "+8.2%",
-    changeType: "increase",
-    icon: ShoppingBag,
-    description: "vs yesterday",
-  },
-  {
-    title: "Avg Order Value",
-    value: "$26.50",
-    change: "-2.1%",
-    changeType: "decrease",
-    icon: TrendingUp,
-    description: "vs yesterday",
-  },
-  {
-    title: "Customer Rating",
-    value: "4.8",
-    change: "+0.2",
-    changeType: "increase",
-    icon: Star,
-    description: "this month",
-  },
-];
+// const statsCards = [
+//   {
+//     title: "Today's Revenue",
+//     value: "$1,247",
+//     change: "+12.5%",
+//     changeType: "increase",
+//     icon: DollarSign,
+//     description: "vs yesterday",
+//   },
+//   {
+//     title: "Orders Today",
+//     value: "47",
+//     change: "+8.2%",
+//     changeType: "increase",
+//     icon: ShoppingBag,
+//     description: "vs yesterday",
+//   },
+//   {
+//     title: "Avg Order Value",
+//     value: "$26.50",
+//     change: "-2.1%",
+//     changeType: "decrease",
+//     icon: TrendingUp,
+//     description: "vs yesterday",
+//   },
+//   {
+//     title: "Customer Rating",
+//     value: "4.8",
+//     change: "+0.2",
+//     changeType: "increase",
+//     icon: Star,
+//     description: "this month",
+//   },
+// ];
 
 // const recentOrders = [
 //   {
@@ -81,14 +81,14 @@ const statsCards = [
 //     status: "delivered",
 //     time: "25 min ago",
 //   },
-//   {
-//     id: "#ORD-004",
-//     customer: "Emma Davis",
-//     items: "2x Caesar Salad, 2x Lemonade",
-//     amount: "$32.00",
-//     status: "confirmed",
-//     time: "3 min ago",
-//   },
+// {
+//   id: "#ORD-004",
+//   customer: "Emma Davis",
+//   items: "2x Caesar Salad, 2x Lemonade",
+//   amount: "$32.00",
+//   status: "confirmed",
+//   time: "3 min ago",
+// },
 // ];
 
 const getStatusColor = (status) => {
@@ -106,16 +106,58 @@ const getStatusColor = (status) => {
   }
 };
 
+// Icon mapping based on stat titles
+const iconMap = {
+  "Today's Revenue": DollarSign,
+  "Orders Today": ShoppingBag,
+  "Avg Order Value": TrendingUp,
+  "Customer Rating": Star,
+};
+
 const DashboardRest = ({ setActiveTab, setCurrentView }) => {
   const { authRestaurant } = restaurantAuthStore();
 
   const [recentOrders, setRecentOrders] = useState([]);
+  const [statsCards, setStastCards] = useState([]);
+
+  const getStatCard = async () => {
+    try {
+      const respons = await axiosInstance.get("/restaurant/today_stat");
+
+      return respons.data;
+    } catch (err) {
+      console.error("Error fetching today stat:", err.message);
+      return [];
+    }
+  };
+
+  useEffect(() => {
+    const fetchStat = async () => {
+      const stat = await getStatCard();
+      setStastCards(stat);
+    };
+    fetchStat();
+  }, []);
 
   const getRecentOrder = async () => {
     try {
       const response = await axiosInstance.get("/restaurant/recent_orders");
-      return response.data;
+      const rawOrders = response.data;
+
+      const formattedOrders = rawOrders.map((order) => ({
+        id: order.id,
+        customer: order.customer,
+        items: order.items
+          .map((item) => `${item.quantity}x ${item.name}`)
+          .join(", "),
+        amount: `$${order.total.toFixed(2)}`,
+        status: order.status,
+        time: "3 min ago", // Placeholder; replace with real time logic if available
+      }));
+
+      return formattedOrders;
     } catch (err) {
+      console.error("Error fetching recent orders:", err.message);
       return [];
     }
   };
@@ -142,7 +184,10 @@ const DashboardRest = ({ setActiveTab, setCurrentView }) => {
                 {stat.title}
               </CardTitle>
               <div className="bg-gradient-to-r from-orange-500 to-red-500 p-2 rounded-lg">
-                <stat.icon className="h-4 w-4 text-white" />
+                {(() => {
+                  const Icon = iconMap[stat.title] || DollarSign;
+                  return <Icon className="h-4 w-4 text-white" />;
+                })()}
               </div>
             </CardHeader>
             <CardContent>
@@ -284,155 +329,6 @@ const DashboardRest = ({ setActiveTab, setCurrentView }) => {
       </div>
     </div>
   );
-
-  // return (
-  //   <div className="p-6 space-y-6">
-  //     {/* Stats Grid */}
-  //     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-  //       {statsCards.map((stat, index) => (
-  //         <Card
-  //           key={index}
-  //           className="hover:shadow-lg transition-shadow duration-200"
-  //         >
-  //           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-  //             <CardTitle className="text-sm font-medium text-gray-600">
-  //               {stat.title}
-  //             </CardTitle>
-  //             <div className="bg-gradient-to-r from-orange-500 to-red-500 p-2 rounded-lg">
-  //               <stat.icon className="h-4 w-4 text-white" />
-  //             </div>
-  //           </CardHeader>
-  //           <CardContent>
-  //             <div className="text-2xl font-bold text-gray-900">
-  //               {stat.value}
-  //             </div>
-  //             <div className="flex items-center space-x-1 mt-1">
-  //               {stat.changeType === "increase" ? (
-  //                 <ArrowUpRight className="h-4 w-4 text-green-500" />
-  //               ) : (
-  //                 <ArrowDownRight className="h-4 w-4 text-red-500" />
-  //               )}
-  //               <span
-  //                 className={`text-sm ${
-  //                   stat.changeType === "increase"
-  //                     ? "text-green-600"
-  //                     : "text-red-600"
-  //                 }`}
-  //               >
-  //                 {stat.change}
-  //               </span>
-  //               <span className="text-sm text-gray-500">
-  //                 {stat.description}
-  //               </span>
-  //             </div>
-  //           </CardContent>
-  //         </Card>
-  //       ))}
-  //     </div>
-
-  //     {/* Recent Orders */}
-  //     <Card>
-  //       <CardHeader>
-  //         <div className="flex items-center justify-between">
-  //           <div>
-  //             <CardTitle>Recent Orders</CardTitle>
-  //             <CardDescription>Your latest customer orders</CardDescription>
-  //           </div>
-  //           <Button variant="outline">View All Orders</Button>
-  //         </div>
-  //       </CardHeader>
-  //       <CardContent>
-  //         <div className="space-y-4">
-  //           {recentOrders.map((order, index) => (
-  //             <div
-  //               key={index}
-  //               className="flex items-center justify-between p-4 border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors"
-  //             >
-  //               <div className="flex items-center space-x-4">
-  //                 <div className="bg-gradient-to-r from-orange-500 to-red-500 p-2 rounded-lg">
-  //                   <ShoppingBag className="h-4 w-4 text-white" />
-  //                 </div>
-  //                 <div>
-  //                   <div className="flex items-center space-x-2">
-  //                     <p className="font-medium text-gray-900">{order.id}</p>
-  //                     <Badge className={getStatusColor(order.status)}>
-  //                       {order.status}
-  //                     </Badge>
-  //                   </div>
-  //                   <p className="text-sm text-gray-600">{order.customer}</p>
-  //                   <p className="text-sm text-gray-500">{order.items}</p>
-  //                 </div>
-  //               </div>
-  //               <div className="text-right">
-  //                 <p className="font-semibold text-gray-900">{order.amount}</p>
-  //                 <p className="text-sm text-gray-500 flex items-center">
-  //                   <Clock className="h-3 w-3 mr-1" />
-  //                   {order.time}
-  //                 </p>
-  //               </div>
-  //             </div>
-  //           ))}
-  //         </div>
-  //       </CardContent>
-  //     </Card>
-
-  //     {/* Quick Actions */}
-  //     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-  //       <Card className="bg-gradient-to-r from-orange-500 to-red-500 text-white">
-  //         <CardHeader>
-  //           <CardTitle className="text-white">Add New Menu Item</CardTitle>
-  //           <CardDescription className="text-orange-100">
-  //             Expand your menu with delicious offerings
-  //           </CardDescription>
-  //         </CardHeader>
-  //         <CardContent>
-  //           <Button
-  //             variant="secondary"
-  //             className="bg-white text-orange-600 hover:bg-gray-100"
-  //           >
-  //             Add Item
-  //           </Button>
-  //         </CardContent>
-  //       </Card>
-
-  //       <Card className="bg-gradient-to-r from-green-500 to-emerald-500 text-white">
-  //         <CardHeader>
-  //           <CardTitle className="text-white">
-  //             Update Restaurant Hours
-  //           </CardTitle>
-  //           <CardDescription className="text-green-100">
-  //             Keep customers informed about availability
-  //           </CardDescription>
-  //         </CardHeader>
-  //         <CardContent>
-  //           <Button
-  //             variant="secondary"
-  //             className="bg-white text-green-600 hover:bg-gray-100"
-  //           >
-  //             Update Hours
-  //           </Button>
-  //         </CardContent>
-  //       </Card>
-
-  //       <Card className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white">
-  //         <CardHeader>
-  //           <CardTitle className="text-white">View Analytics</CardTitle>
-  //           <CardDescription className="text-blue-100">
-  //             Track your restaurant's performance
-  //           </CardDescription>
-  //         </CardHeader>
-  //         <CardContent>
-  //           <Button
-  //             variant="secondary"
-  //             className="bg-white text-blue-600 hover:bg-gray-100"
-  //           >
-  //             View Reports
-  //           </Button>
-  //         </CardContent>
-  //       </Card>
-  //     </div>
-  //   </div>
-  // );
 };
 
 export default DashboardRest;
