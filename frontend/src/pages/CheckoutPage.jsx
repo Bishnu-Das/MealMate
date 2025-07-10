@@ -4,7 +4,7 @@ import { Button } from '../restaurant/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '../restaurant/components/ui/radio-group';
 import { Label } from '../restaurant/components/ui/label';
 import { axiosInstance } from '../../lib/axios';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 
@@ -42,7 +42,9 @@ const CheckoutPage = () => {
         await axiosInstance.post('/customer/order/create', { cartItems });
         toast.success('Orders placed successfully!');
         clearCart();
-        navigate('/order-history');
+        setTimeout(() => {
+          navigate('/order-history');
+        }, 500); // Delay navigation by 500ms to allow toast to show
       } catch (error) {
         toast.error('Failed to place one or more orders.');
       }

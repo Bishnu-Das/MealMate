@@ -35,6 +35,7 @@ const HomepageRider = () => {
 
     if (authrider) {
       fetchDashboardData();
+      console.log("Dashboard data:", dashboardData);
 
       socketService.connect("riders"); // Connect as a rider
 

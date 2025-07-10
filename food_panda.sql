@@ -132,6 +132,7 @@ CREATE TABLE payments (
   method_type payment_method,
   amount DECIMAL(10,2),
   status VARCHAR(20),
+  transaction_id VARCHAR(255),
   paid_at TIMESTAMP
 );
 
