@@ -1,23 +1,30 @@
-import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";  
+import React, { useEffect, useState, useRef } from "react";
+import { Link } from "react-router-dom";
 import { useRiderAuthStore } from "../store/riderAuthStore";
 import Navbar from "../../Components/skeleton/Navbar";
-import { Loader2, MapPin, Phone, Mail, User, Package, Clock, CheckCircle, Truck, History, Settings, LogOut } from "lucide-react";
+import { Loader2, MapPin, Phone, Mail, User, Package, Clock, CheckCircle, Truck, History, Settings, LogOut, Bell } from "lucide-react";
 import { axiosInstance } from "../../../lib/axios";
 import toast from "react-hot-toast";
+import socketService from "../../services/socketService";
+import { useNotificationStore } from "../../store/notificationStore";
 
 const HomepageRider = () => {
-  const { authrider, logout } = useRiderAuthStore();
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [isAvailable, setIsAvailable] = useState(authrider?.is_available || true);
+  // Initialize isAvailable to true by default, it will be updated by fetched data
+  const [isAvailable, setIsAvailable] = useState(true);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const notificationRef = useRef();
+
+  const { authrider, logout } = useRiderAuthStore();
+  const { notifications: globalNotifications, addNotification, clearNotifications } = useNotificationStore();
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
         const res = await axiosInstance.get("/rider/data/dashboard");
         setDashboardData(res.data);
-        setIsAvailable(res.data.isAvailable);
+        setIsAvailable(res.data.isAvailable); // Set availability based on fetched data
       } catch (err) {
         console.error("Error fetching dashboard data:", err);
         toast.error("Failed to load dashboard data.");
@@ -28,8 +35,49 @@ const HomepageRider = () => {
 
     if (authrider) {
       fetchDashboardData();
+
+      socketService.connect("riders"); // Connect as a rider
+
+      socketService.on("new_delivery", (newOrder) => {
+        console.log("New delivery received:", newOrder);
+        toast.success(`New order #${newOrder.order_id} available!`);
+        addNotification(newOrder);
+        setDashboardData((prevData) => ({
+          ...prevData,
+          availableOrders: [newOrder, ...(prevData?.availableOrders || [])],
+        }));
+      });
+
+      socketService.on("order_accepted", ({ orderId, riderProfile }) => {
+        console.log(`Order ${orderId} accepted by rider:`, riderProfile);
+        // Remove the accepted order from available orders if it was accepted by another rider
+        setDashboardData((prevData) => ({
+          ...prevData,
+          availableOrders: prevData.availableOrders.filter(
+            (order) => order.order_id !== orderId
+          ),
+        }));
+      });
     }
-  }, [authrider]);
+
+    function handleClickOutside(event) {
+      if (notificationRef.current && !notificationRef.current.contains(event.target)) {
+        setShowNotifications(false);
+      }
+    }
+
+    if (showNotifications) {
+      document.addEventListener("mousedown", handleClickOutside);
+    } else {
+      document.removeEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      socketService.off("new_delivery");
+      socketService.off("order_accepted");
+    };
+  }, [authrider, showNotifications]); // Added authrider to dependency array
 
   const handleAvailabilityToggle = async () => {
     try {
@@ -44,17 +92,41 @@ const HomepageRider = () => {
   };
 
   const handleUpdateOrderStatus = async (orderId, newStatus) => {
+    console.log("handleUpdateOrderStatus called");
     try {
+      // Optimistically update the UI
+      setDashboardData((prevData) => {
+        if (!prevData || !prevData.assignedOrder) return prevData;
+        const updatedAssignedOrder = {
+          ...prevData.assignedOrder,
+          order_status: newStatus,
+        };
+        const newDashboardData = {
+          ...prevData,
+          assignedOrder: updatedAssignedOrder,
+        };
+        console.log("Optimistically updated dashboardData:", newDashboardData);
+        return newDashboardData;
+      });
+
       await axiosInstance.put(`/rider/data/orders/${orderId}/status`, { status: newStatus });
       toast.success(`Order ${orderId} status updated to ${newStatus}`);
-      setLoading(true);
+
+      // Re-fetch dashboard data in the background to ensure full consistency
+      const res = await axiosInstance.get("/rider/data/dashboard");
+      console.log("Refetched dashboardData after update:", res.data);
+      setDashboardData(res.data);
+      setIsAvailable(res.data.isAvailable);
+
+    } catch (err) {
+      console.error("Error updating order status:", err);
+      toast.error(err?.response?.data?.message || "Failed to update order status.");
+      // If update fails, re-fetch to revert optimistic update
+      setLoading(true); // Temporarily show loading while re-fetching to revert
       const res = await axiosInstance.get("/rider/data/dashboard");
       setDashboardData(res.data);
       setIsAvailable(res.data.isAvailable);
       setLoading(false);
-    } catch (err) {
-      console.error("Error updating order status:", err);
-      toast.error(err?.response?.data?.message || "Failed to update order status.");
     }
   };
 
@@ -86,16 +158,77 @@ const HomepageRider = () => {
               </p>
             </div>
             <div className="flex items-center space-x-4">
-              <div className={`px-4 py-2 rounded-full text-sm font-semibold ${
-                isAvailable 
-                  ? 'bg-green-100 text-green-800 border border-green-200' 
-                  : 'bg-red-100 text-red-800 border border-red-200'
-              }`}>
-                <div className={`w-2 h-2 rounded-full inline-block mr-2 ${
-                  isAvailable ? 'bg-green-500' : 'bg-red-500'
-                }`}></div>
-                {isAvailable ? 'Available' : 'Unavailable'}
+              <div className="relative" ref={notificationRef}>
+                <button
+                  onClick={() => setShowNotifications((v) => !v)}
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 flex items-center"
+                >
+                  <Bell className="size-5 mr-2" />
+                  Notifications
+                  {globalNotifications.length > 0 && (
+                    <span className="absolute top-1 right-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                      {globalNotifications.length}
+                    </span>
+                  )}
+                </button>
+                {showNotifications && (
+                  <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200 z-10 max-h-96 overflow-y-auto">
+                    {globalNotifications.length > 0 ? (
+                      <div>
+                        {globalNotifications.map((order) => (
+                          <div key={order.order_id} className="p-4 border-b border-gray-200 last:border-b-0">
+                            <p className="font-medium text-gray-900">New Order #{order.order_id} from {order.restaurant_name}</p>
+                            <p className="text-sm text-gray-600">Total: ${order.total_amount}</p>
+                            <p className="text-sm text-gray-600">Drop-off: {order.dropoff_addr}</p>
+                            <button
+                              className="mt-2 w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 text-sm"
+                              onClick={async () => {
+                                try {
+                                  await axiosInstance.put(`/rider/data/orders/${order.order_id}/accept`);
+                                  toast.success("Order accepted!");
+                                  clearNotifications(); // Clear all notifications after accepting one
+                                  // Optimistically remove the order from available orders and add to assigned
+                                  setDashboardData((prevData) => ({
+                                    ...prevData,
+                                    availableOrders: prevData.availableOrders.filter(
+                                      (ao) => ao.order_id !== order.order_id
+                                    ),
+                                    assignedOrder: order, // Assuming the accepted order becomes the assigned one
+                                  }));
+                                  setShowNotifications(false); // Close notifications after accepting
+                                } catch (err) {
+                                  console.error("Error accepting order from notification:", err);
+                                  toast.error(err?.response?.data?.message || "Failed to accept order.");
+                                }
+                              }}
+                            >
+                              Accept Order
+                            </button>
+                          </div>
+                        ))}
+                        <div className="p-4 border-t border-gray-200">
+                          <button className="w-full text-blue-600 hover:text-blue-800" onClick={clearNotifications}>
+                            Clear All
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="p-4 text-gray-600">No new deliveries</p>
+                    )}
+                  </div>
+                )}
               </div>
+              <button
+                onClick={handleAvailabilityToggle}
+                className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors duration-200 flex items-center ${
+                  isAvailable
+                    ? 'bg-green-100 text-green-800 border border-green-200 hover:bg-green-200'
+                    : 'bg-red-100 text-red-800 border border-red-200 hover:bg-red-200'
+                }`}
+              >
+                <div className={`w-2 h-2 rounded-full inline-block mr-2 ${isAvailable ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                {isAvailable ? 'Available' : 'Unavailable'}
+              </button>
             </div>
           </div>
         </div>
@@ -107,7 +240,7 @@ const HomepageRider = () => {
               <Package className="size-6 text-amber-600 mr-3" />
               <h2 className="text-2xl font-bold text-amber-800">Active Delivery</h2>
             </div>
-            
+
             <div className="grid md:grid-cols-2 gap-8">
               <div className="space-y-6">
                 <div className="bg-white/70 backdrop-blur-sm rounded-xl p-6 border border-amber-200">
@@ -119,10 +252,10 @@ const HomepageRider = () => {
                     <p className="text-gray-700"><span className="font-medium">Order ID:</span> #{dashboardData.assignedOrder.order_id}</p>
                     <p className="text-gray-700 flex items-center">
                       <Clock className="size-4 mr-2 text-gray-500" />
-                      <span className="font-medium">Status:</span> 
+                      <span className="font-medium">Status:</span>
                       <span className={`ml-2 px-2 py-1 rounded-full text-xs font-semibold ${
-                        dashboardData.assignedOrder.order_status === 'preparing' 
-                          ? 'bg-blue-100 text-blue-800' 
+                        dashboardData.assignedOrder.order_status === 'preparing'
+                          ? 'bg-blue-100 text-blue-800'
                           : 'bg-green-100 text-green-800'
                       }`}>
                         {dashboardData.assignedOrder.order_status}
@@ -169,7 +302,7 @@ const HomepageRider = () => {
                     </p>
                     {dashboardData.assignedOrder.dropoff_latitude && dashboardData.assignedOrder.dropoff_longitude && (
                       <a
-                        href={`https://www.google.com/maps/dir/?api=1&destination=${dashboardData.assignedOrder.dropoff_latitude},${dashboardData.assignedOrder.dropoff_longitude}`}
+                        href={`http://maps.google.com/?q=${dashboardData.assignedOrder.dropoff_latitude},${dashboardData.assignedOrder.dropoff_longitude}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 text-sm font-medium"
@@ -223,7 +356,7 @@ const HomepageRider = () => {
             <Package className="size-6 mr-3 text-green-600" />
             Available Orders
           </h2>
-          
+
           {dashboardData?.availableOrders && dashboardData.availableOrders.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {dashboardData.availableOrders.map((order) => (
@@ -231,8 +364,8 @@ const HomepageRider = () => {
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-semibold text-gray-800">Order #{order.order_id}</h3>
                     <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                      order.status === 'preparing' 
-                        ? 'bg-blue-100 text-blue-800' 
+                      order.status === 'preparing'
+                        ? 'bg-blue-100 text-blue-800'
                         : 'bg-green-100 text-green-800'
                     }`}>
                       {order.status}
@@ -243,19 +376,47 @@ const HomepageRider = () => {
                     <button
                       className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center"
                       onClick={async () => {
+                        console.log("Accept Order button clicked");
                         try {
                           await axiosInstance.put(`/rider/data/orders/${order.order_id}/accept`);
                           toast.success("Order accepted!");
-                          setLoading(true);
+                          // Optimistically update dashboard data to reflect accepted order
+                          setDashboardData((prevData) => {
+                            const updatedAvailableOrders = prevData.availableOrders.filter(
+                              (o) => o.order_id !== order.order_id
+                            );
+                            const newAssignedOrder = {
+                              ...order, // Use the order from availableOrders
+                              order_status: 'out_for_delivery', // Set initial status
+                            };
+                            const newDashboardData = {
+                              ...prevData,
+                              availableOrders: updatedAvailableOrders,
+                              assignedOrder: newAssignedOrder,
+                            };
+                            console.log("Optimistically updated dashboardData after accept:", newDashboardData);
+                            return newDashboardData;
+                          });
+                          clearNotifications(); // Clear all notifications after accepting one
+                          // Re-fetch dashboard data in the background for consistency
+                          setLoading(true); // Show loading briefly while re-fetching
                           const res = await axiosInstance.get("/rider/data/dashboard");
+                          console.log("Refetched dashboardData after accept:", res.data);
                           setDashboardData(res.data);
                           setIsAvailable(res.data.isAvailable);
                           setLoading(false);
                         } catch (err) {
                           console.error("Error accepting order:", err);
                           toast.error(err?.response?.data?.message || "Failed to accept order.");
+                          // If accept fails, re-fetch to revert optimistic update
+                          setLoading(true); // Show loading briefly while re-fetching
+                          const res = await axiosInstance.get("/rider/data/dashboard");
+                          setDashboardData(res.data);
+                          setIsAvailable(res.data.isAvailable);
+                          setLoading(false);
                         }
                       }}
+                    >
                     >
                       <CheckCircle className="size-5 mr-2" />
                       Accept Order
@@ -282,6 +443,7 @@ const HomepageRider = () => {
 
         {/* Action Buttons */}
         <div className="flex flex-wrap gap-4 justify-center">
+
           <Link
             to="/rider/history"
             className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 flex items-center"

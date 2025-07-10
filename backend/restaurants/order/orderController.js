@@ -188,6 +188,7 @@ export const updateStatus = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
 export const todaysOrderStat = async (req, res) => {
   const restaurant_id = req.user.id;
 

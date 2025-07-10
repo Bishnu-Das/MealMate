@@ -18,7 +18,7 @@ import HomepageRider from "./rider/pages/HomepageRider";
 import DeliveryHistoryPage from "./rider/pages/DeliveryHistoryPage";
 import OrderDetailsPage from "./rider/pages/OrderDetailsPage";
 import ProfilePageRider from "./rider/pages/ProfilePageRider";
-import { Toaster } from "react-hot-toast";
+
 import OrderHistoryPage from './pages/OrderHistoryPage';
 
 
@@ -27,6 +27,7 @@ import HomepageRest from "./restaurant/pages/HomepageRest";
 import RestaurantProfie from "./pages/RestaurantProfile";
 import CheckoutPage from "./pages/CheckoutPage";
 import SimulatePaymentGateway from "./pages/SimulatePaymentGateway";
+import { Toaster } from "./restaurant/components/ui/sonner";
 
 import { element } from "prop-types";
 
@@ -51,7 +52,7 @@ function App() {
 
   return (
     <div>
-      <Toaster position="top-right" reverseOrder={false} />
+      <Toaster />
         {/* <Navbar /> */}
         <Routes>
           {/* Customer */}

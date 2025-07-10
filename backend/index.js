@@ -2,12 +2,12 @@ import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import http from "http"; // Import http module
-import { Server } from "socket.io"; // Import Server from socket.io
+import { initSocket, getIO } from "./socket.js"; // Import initSocket and getIO
 import customerAuthRoute from "./routes/customerRoute.js";
 import customerRestaurantRoutes from "./customer/restaurant/restaurantRoutes.js";
 import customerCartRoutes from "./customer/cart/cartRoutes.js";
 import router from "./rider/riderRoutes.js";
-import restaurantRoute from "./routes/restaurantRoute.js";
+import { router as restaurantRoute } from "./routes/restaurantRoute.js";
 import menuRoutes from "./menu-management/menuRoutes.js"; // Import the menu routes
 import cookieParser from "cookie-parser";
 import riderAuthRoute from "./routes/riderAuthRoute.js";
@@ -20,21 +20,9 @@ dotenv.config();
 
 const app = express();
 const server = http.createServer(app); // Create an HTTP server
-const io = new Server(server, {
-  cors: {
-    origin: "http://localhost:5173", // Your frontend URL
-    methods: ["GET", "POST", "PUT"],
-  },
-});
 
-// Socket.IO connection handling
-io.on("connection", (socket) => {
-  console.log("A user connected:", socket.id);
-
-  socket.on("disconnect", () => {
-    console.log("User disconnected:", socket.id);
-  });
-});
+// Initialize Socket.IO
+const io = initSocket(server);
 
 app.use(express.json());
 app.use(cookieParser());
@@ -70,7 +58,7 @@ app.use("/api/restaurant/stats", restaurnatStat); // for fetching restaurnant st
 
 const PORT = process.env.PORT || 5001;
 server.listen(PORT, () => {
-  console.log(`server is running on port: ${PORT}`);
+  console.log(`Backend HTTP server is running on port: ${PORT}`);
 });
 
 export { io }; // Export the io instance

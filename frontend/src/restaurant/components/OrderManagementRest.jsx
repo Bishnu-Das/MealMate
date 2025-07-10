@@ -1,35 +1,28 @@
-import React, { useEffect, useState } from "react";
-import { axiosInstance } from "../../../lib/axios";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "../components/ui/card";
-import { Button } from "../components/ui/button";
-import { Badge } from "../components/ui/badge";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "../components/ui/tabs";
+import React, { useState, useEffect, useCallback } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import { Button } from "./ui/button";
+import { Badge } from "./ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Clock, MapPin, Phone, User } from "lucide-react";
+import socketService from "../../services/socketService";
+import { restaurantAuthStore } from "../store/restaurantAuthStore";
+import axios from "axios";
+import { toast } from "../../hooks/use-toast";
 
 function getStatusColor(status) {
   switch (status) {
-    case "pending":
-      return "bg-yellow-100 text-yellow-800";
-    case "confirmed":
+    case "pending_restaurant_acceptance":
       return "bg-blue-100 text-blue-800";
     case "preparing":
       return "bg-orange-100 text-orange-800";
-    case "ready":
+    case "ready_for_pickup":
       return "bg-green-100 text-green-800";
-    case "picked-up":
+    case "out_for_delivery":
       return "bg-purple-100 text-purple-800";
     case "delivered":
       return "bg-gray-100 text-gray-800";
+    case "restaurant_rejected":
+      return "bg-red-100 text-red-800";
     case "cancelled":
       return "bg-red-100 text-red-800";
     default:
@@ -41,12 +34,12 @@ function getStatusColor(status) {
 
 function getNextStatus(currentStatus) {
   switch (currentStatus) {
-    case "pending":
-      return "preparing";
+    case "pending_restaurant_acceptance":
+      return "preparing"; // Restaurant accepts
     case "preparing":
-      return "out_for_delivary";
-    case "out_for_delivery":
-      return "delivered";
+      return "ready_for_pickup"; // Food is ready
+    case "ready_for_pickup":
+      return currentStatus; // Restaurant cannot set to out_for_delivery
     default:
       return currentStatus;
   }
@@ -54,47 +47,57 @@ function getNextStatus(currentStatus) {
 
 function getStatusLabel(status) {
   switch (status) {
-    case "pending":
-      return "Confirm Order";
+    case "pending_restaurant_acceptance":
+      return "Accept Order";
     case "preparing":
-      return "Mark Ready";
-    case "out_for_delivery":
-      return "Mark Delivered";
+      return "Mark Ready for Pickup";
+    case "ready_for_pickup":
+      return "Mark Out for Delivery"; // This will be handled by rider
     default:
       return "Update Status";
   }
 }
 
-function OrderCard({ order, onUpdateStatus }) {
+function OrderCard({ order, onUpdateStatus, onRejectOrder }) {
+  const showActionButtons = ![
+    "delivered",
+    "restaurant_rejected",
+    "cancelled",
+    "out_for_delivery",
+    "ready_for_pickup",
+  ].includes(order.status);
+
   return (
     <Card className="hover:shadow-lg transition-shadow duration-200">
       <CardHeader>
         <div className="flex justify-between items-start">
           <div className="space-y-1">
             <div className="flex items-center space-x-2">
-              <CardTitle className="text-lg text-gray-400">
-                {order.id}
-              </CardTitle>
+              <CardTitle className="text-lg">Order #{order.order_id}</CardTitle>
               <Badge className={getStatusColor(order.status)}>
-                {order.status}
+                {order.status ? order.status.replace(/_/g, " ") : "N/A"}
               </Badge>
             </div>
             <div className="flex items-center space-x-4 text-sm text-gray-300">
               <div className="flex items-center">
                 <Clock className="h-4 w-4 mr-1" />
-                {order.orderTime}
+                {new Date(order.created_at).toLocaleTimeString()}
               </div>
-              <div className="flex items-center">
-                <Clock className="h-4 w-4 mr-1" />
-                {order.estimatedTime}
-              </div>
+              {order.rider_name && (
+                <div className="flex items-center">
+                  <User className="h-4 w-4 mr-1" />
+                  {order.rider_name} (Rider)
+                </div>
+              )}
             </div>
           </div>
           <div className="text-right">
-            <p className="text-xl font-bold text-blue-400">
-              ${order.total.toFixed(2)}
+            <p className="text-xl font-bold text-gray-900">
+              ${parseFloat(order.total_amount).toFixed(2)}
             </p>
-            <p className="text-sm text-amber-200">{order.paymentMethod}</p>
+            <p className="text-sm text-gray-500">
+              {order.payment_method || "N/A"}
+            </p>
           </div>
         </div>
       </CardHeader>
@@ -104,48 +107,60 @@ function OrderCard({ order, onUpdateStatus }) {
           <div className="space-y-2">
             <div className="flex items-center space-x-2">
               <User className="h-4 w-4 text-gray-400" />
-              <span className="font-medium">{order.customer}</span>
+              <span className="font-medium">{order.customer_name}</span>
             </div>
             <div className="flex items-center space-x-2">
               <Phone className="h-4 w-4 text-gray-400" />
-              <span className="text-sm text-gray-200">{order.phone}</span>
+              <span className="text-sm text-gray-600">
+                {order.customer_phone}
+              </span>
             </div>
             <div className="flex items-center space-x-2">
-              <MapPin className="h-4 w-4 text-gray-200" />
-              <span className="text-sm text-gray-200">{order.address}</span>
+              <MapPin className="h-4 w-4 text-gray-400" />
+              <span className="text-sm text-gray-600">
+                {order.dropoff_addr}
+              </span>
             </div>
           </div>
           <div className="space-y-2">
-            <h4 className="font-medium text-gray-500">Order Items:</h4>
-            {order.items.map((item, index) => (
-              <div key={index} className="flex justify-between text-sm">
-                <span>
-                  {item.quantity}x {item.name}
-                </span>
-                <span>${(item.price * item.quantity).toFixed(2)}</span>
-              </div>
-            ))}
+            <h4 className="font-medium text-gray-900">Order Items:</h4>
+            {order.items &&
+              order.items.map((item, index) => (
+                <div key={index} className="flex justify-between text-sm">
+                  <span>
+                    {item.quantity}x {item.menu_item_name}
+                  </span>
+                  <span>
+                    ${(parseFloat(item.price) * item.quantity).toFixed(2)}
+                  </span>
+                </div>
+              ))}
           </div>
         </div>
 
-        {order.status !== "delivered" && order.status !== "cancelled" && (
-          <div className="flex flex-wrap gap-2 pt-4 border-t">
+        {showActionButtons && (
+          <div className="flex space-x-2 pt-4 border-t">
             <Button
-              onClick={() => onUpdateStatus(order.id)}
+              onClick={() => {
+                console.log(
+                  `Order status before getNextStatus: ${order.status}`
+                );
+                const nextStatus = getNextStatus(order.status);
+                console.log(`Next status calculated: ${nextStatus}`);
+                onUpdateStatus(order.order_id, nextStatus);
+              }}
               className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
             >
               {getStatusLabel(order.status)}
             </Button>
-
-            {order.status === "pending" && (
+            {order.status === "pending_restaurant_acceptance" && (
               <Button
-                onClick={() => onUpdateStatus(order.id, "cancelled")}
-                className="bg-gradient-to-r from-gray-600 to-red-800 hover:from-gray-700 hover:to-red-900"
+                variant="outline"
+                onClick={() => onRejectOrder(order.order_id)}
               >
-                Cancel Order
+                Reject Order
               </Button>
             )}
-
             <Button variant="outline">
               <Phone className="h-4 w-4 mr-2" />
               Call Customer
@@ -159,47 +174,110 @@ function OrderCard({ order, onUpdateStatus }) {
 
 function OrderManagement() {
   const [orderList, setOrderList] = useState([]);
+  const { authRestaurant: restaurant } = restaurantAuthStore();
 
-  const getOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     try {
-      const response = await axiosInstance.get("/restaurant/recent_orders");
-      return response.data;
-    } catch (err) {
-      console.error("Error fetching recent orders:", err.message);
-      return [];
+      const response = await axios.get("/api/restaurant/orders");
+      console.log("Fetched orders data:", response.data);
+      setOrderList(response.data);
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+      setOrderList([]); // Ensure orderList is always an array on error
+    }
+  }, []);
+
+  useEffect(() => {
+    if (restaurant && restaurant.restaurant_id) {
+      socketService.connect("restaurant", restaurant.restaurant_id);
+      socketService.on("new_order", (newOrder) => {
+        console.log("New order received:", newOrder);
+        setOrderList((prevOrders) => [newOrder, ...prevOrders]);
+
+        toast({
+          title: "New Order Received!",
+          description: `Order #${newOrder.order_id} from ${
+            newOrder.customer_name
+          } for ${parseFloat(newOrder.total_amount).toFixed(2)}`,
+          action: {
+            label: "Accept",
+            onClick: () => updateOrderStatus(newOrder.order_id, "preparing"),
+          },
+          cancel: {
+            label: "Reject",
+            onClick: () => rejectOrder(newOrder.order_id),
+          },
+          duration: 1000000, // Keep toast visible until action is taken
+        });
+      });
+
+      socketService.on("order_status_updated", (updatedOrder) => {
+        console.log("Order status updated:", updatedOrder);
+        setOrderList((prevOrders) =>
+          prevOrders.map((order) =>
+            order.order_id === updatedOrder.order_id ? updatedOrder : order
+          )
+        );
+      });
+
+      socketService.on("order_accepted", ({ orderId, riderProfile }) => {
+        console.log(`Order ${orderId} accepted by rider:`, riderProfile);
+        setOrderList((prevOrders) =>
+          prevOrders.map((order) =>
+            order.order_id === orderId
+              ? {
+                  ...order,
+                  rider_name: riderProfile.name,
+                  rider_phone: riderProfile.phone_number,
+                  status: "out_for_delivery",
+                } // Update status to out_for_delivery
+              : order
+          )
+        );
+      });
+
+      fetchOrders();
+    }
+
+    return () => {
+      socketService.off("new_order");
+      socketService.off("order_status_updated");
+      socketService.off("order_accepted");
+      socketService.disconnect();
+    };
+  }, [restaurant, fetchOrders]);
+
+  const updateOrderStatus = async (orderId, newStatus) => {
+    console.log(
+      `Attempting to update order ${orderId} to status: ${newStatus}`
+    );
+    console.log(`Frontend sending status: ${newStatus} for order ${orderId}`);
+    console.log(`Value of newStatus before sending: ${newStatus}`);
+    try {
+      await axios.put(`/api/restaurant/orders/${orderId}/status`, {
+        status: newStatus,
+      });
+      console.log(
+        `Successfully sent update status request for order ${orderId}`
+      );
+      // The order list will be updated via socket.io event from the backend
+    } catch (error) {
+      console.error("Error updating order status:", error);
     }
   };
 
-  useEffect(() => {
-    const fetchOrders = async () => {
-      const orders = await getOrders();
-      setOrderList(orders);
-    };
-    fetchOrders();
-  }, []);
-
-  const updateOrderStatus = async (orderId, forcedStatus = null) => {
-    const updatedOrders = orderList.map((order) => {
-      if (order.id === orderId) {
-        const newStatus = forcedStatus || getNextStatus(order.status);
-        return { ...order, status: newStatus };
-      }
-      return order;
-    });
-
-    const updatedOrder = updatedOrders.find((o) => o.id === orderId);
-    const newStatus = updatedOrder.status;
-
+  const rejectOrder = async (orderId) => {
+    console.log(`Attempting to reject order ${orderId}`);
     try {
-      await axiosInstance.put("/restaurant/update_order_status", {
-        order_id: orderId,
-        new_status: newStatus,
+      await axios.put(`/api/restaurant/orders/${orderId}/status`, {
+        status: "restaurant_rejected",
       });
-
-      setOrderList(updatedOrders);
+      console.log(
+        `Successfully sent reject order request for order ${orderId}`
+      );
+      // The order list will be updated via socket.io event from the backend
     } catch (error) {
-      console.error("Failed to update order status:", error.message);
-      alert("Failed to update order status. Try again.");
+      console.error("Error rejecting order:", error);
     }
   };
 
@@ -211,11 +289,12 @@ function OrderManagement() {
   // 'pending', 'preparing', 'out_for_delivery', 'delivered', 'cancelled'
   const statuses = [
     "all",
-    "pending",
+    "pending_restaurant_acceptance",
     "preparing",
+    "ready_for_pickup",
     "out_for_delivery",
     "delivered",
-    "cancelled",
+    "restaurant_rejected",
   ];
 
   return (
@@ -226,8 +305,16 @@ function OrderManagement() {
       </div>
 
       <Tabs defaultValue="all" className="w-full">
-        <TabsList className="grid w-full grid-cols-8 bg-gray-800 border border-gray-700">
-          {statuses.map((tab) => (
+        <TabsList className="grid w-full grid-cols-7 bg-gray-800 border border-gray-700">
+          {[
+            "all",
+            "pending_restaurant_acceptance",
+            "preparing",
+            "ready_for_pickup",
+            "out_for_delivery",
+            "delivered",
+            "restaurant_rejected",
+          ].map((tab) => (
             <TabsTrigger
               key={tab}
               value={tab}
@@ -235,21 +322,28 @@ function OrderManagement() {
             >
               {tab === "all"
                 ? "All Orders"
-                : tab
-                    .split("_")
-                    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-                    .join(" ")}
+                : tab.replace(/_/g, " ").charAt(0).toUpperCase() +
+                  tab.replace(/_/g, " ").slice(1)}
             </TabsTrigger>
           ))}
         </TabsList>
 
-        {statuses.map((tab) => (
+        {[
+          "all",
+          "pending_restaurant_acceptance",
+          "preparing",
+          "ready_for_pickup",
+          "out_for_delivery",
+          "delivered",
+          "restaurant_rejected",
+        ].map((tab) => (
           <TabsContent key={tab} value={tab} className="space-y-4">
             {filterOrdersByStatus(tab).map((order) => (
               <OrderCard
-                key={order.id}
+                key={order.order_id}
                 order={order}
                 onUpdateStatus={updateOrderStatus}
+                onRejectOrder={rejectOrder}
               />
             ))}
           </TabsContent>

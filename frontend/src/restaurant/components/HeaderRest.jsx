@@ -3,26 +3,70 @@ import { Bell, Search, User, LogOut } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { restaurantAuthStore } from "../store/restaurantAuthStore";
+import socketService from "../../services/socketService";
+import toast from "react-hot-toast";
+import { useNotificationStore } from "../../store/notificationStore";
 
 const HeaderRest = ({ onLogout }) => {
   const [showMenu, setShowMenu] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const { notifications, addNotification, clearNotifications } = useNotificationStore();
   const menuRef = useRef();
+  const notificationRef = useRef();
 
   const { logout, authRestaurant } = restaurantAuthStore();
 
+  const handleAcceptOrder = (orderId) => {
+    console.log(`Attempting to accept order: ${orderId}`);
+    socketService.emit("accept_order", { orderId, restaurantId: authRestaurant.restaurant_id });
+    toast.success(`Order #${orderId} accepted!`);
+  };
+
+  const handleRejectOrder = (orderId) => {
+    console.log(`Attempting to reject order: ${orderId}`);
+    socketService.emit("reject_order", { orderId, restaurantId: authRestaurant.restaurant_id });
+    toast.error(`Order #${orderId} rejected.`);
+  };
+
   useEffect(() => {
+    if (authRestaurant && authRestaurant.restaurant_id) {
+      socketService.connect("restaurant", authRestaurant.restaurant_id);
+
+      socketService.on("new_order", (newOrder) => {
+        console.log("New order notification:", newOrder);
+        addNotification(newOrder);
+      });
+
+      socketService.on("order_status_updated", (updatedOrder) => {
+        // Remove notification if the order was rejected or accepted
+        // We don't remove from global state here, as it's handled by clearNotifications
+      });
+
+      socketService.on("order_accepted", ({ orderId, riderProfile }) => {
+        console.log(`Order ${orderId} accepted by rider:`, riderProfile);
+        addNotification({ orderId, riderProfile, type: 'order_accepted' });
+        toast.success(`Order #${orderId} accepted by ${riderProfile.name}!`);
+      });
+    }
+
     function handleClickOutside(event) {
       if (menuRef.current && !menuRef.current.contains(event.target)) {
         setShowMenu(false);
       }
+      if (notificationRef.current && !notificationRef.current.contains(event.target)) {
+        setShowNotifications(false);
+      }
     }
-    if (showMenu) {
+    if (showMenu || showNotifications) {
       document.addEventListener("mousedown", handleClickOutside);
     }
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
+      socketService.off("new_order");
+      socketService.off("order_status_updated");
+      socketService.disconnect();
     };
-  }, [showMenu]);
+  }, [showMenu, showNotifications, authRestaurant]);
 
   return (
     <header className="bg-gray-900 border-b border-gray-700 px-6 py-4 shadow-sm">
@@ -43,12 +87,53 @@ const HeaderRest = ({ onLogout }) => {
             variant="ghost"
             size="icon"
             className="relative text-white hover:bg-gray-800"
+            onClick={() => setShowNotifications((v) => !v)}
           >
             <Bell className="h-5 w-5" />
-            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-              3
-            </span>
+            {notifications.length > 0 && (
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                {notifications.length}
+              </span>
+            )}
           </Button>
+
+          {showNotifications && (
+            <div className="absolute right-0 top-12 mt-2 w-80 bg-gray-800 text-white rounded-lg shadow-lg border border-gray-700 z-50 animate-fade-in" ref={notificationRef}>
+              <div className="p-4 border-b border-gray-700">
+                <h3 className="text-lg font-semibold">New Orders</h3>
+              </div>
+              {notifications.length > 0 ? (
+                <div className="max-h-60 overflow-y-auto">
+                  {notifications.map((notif, index) => (
+                    <div key={index} className="p-4 border-b border-gray-700 last:border-b-0">
+                      {notif.type === 'order_accepted' ? (
+                        <p className="font-medium">
+                          Order #{notif.orderId} accepted by {notif.riderProfile.name} ({notif.riderProfile.phone_number})
+                        </p>
+                      ) : (
+                        <>
+                          <p className="font-medium">Order #{notif.order_id} from {notif.customer_name}</p>
+                          <p className="text-sm text-gray-400">Total: ${notif.total_amount}</p>
+                          <p className="text-sm text-gray-400">Status: {notif.status.replace(/_/g, " ")}</p>
+                          <div className="flex space-x-2 mt-2">
+                            <Button variant="outline" className="bg-green-500 hover:bg-green-600 text-white text-xs px-3 py-1 h-auto" onClick={() => handleAcceptOrder(notif.order_id)}>Accept</Button>
+                            <Button variant="outline" className="bg-red-500 hover:bg-red-600 text-white text-xs px-3 py-1 h-auto" onClick={() => handleRejectOrder(notif.order_id)}>Reject</Button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="p-4 text-gray-400">No new orders</p>
+              )}
+              <div className="p-4 border-t border-gray-700">
+                <Button variant="link" className="w-full text-blue-400" onClick={clearNotifications}>
+                  Clear All
+                </Button>
+              </div>
+            </div>
+          )}
 
           <div className="flex items-center space-x-3 relative" ref={menuRef}>
             <div className="text-right">
@@ -87,92 +172,3 @@ const HeaderRest = ({ onLogout }) => {
 };
 
 export default HeaderRest;
-
-// import React, { useState, useRef, useEffect } from "react";
-// import { Bell, Search, User, LogOut } from "lucide-react";
-// import { Button } from "../components/ui/button";
-// import { Input } from "../components/ui/input";
-// import { restaurantAuthStore } from "../store/restaurantAuthStore";
-
-// const HeaderRest = ({ onLogout }) => {
-//   const [showMenu, setShowMenu] = useState(false);
-//   const menuRef = useRef();
-
-//   const { logout, authRestaurant } = restaurantAuthStore();
-
-//   // Close menu when clicking outside
-//   useEffect(() => {
-//     function handleClickOutside(event) {
-//       if (menuRef.current && !menuRef.current.contains(event.target)) {
-//         setShowMenu(false);
-//       }
-//     }
-//     if (showMenu) {
-//       document.addEventListener("mousedown", handleClickOutside);
-//     }
-//     return () => {
-//       document.removeEventListener("mousedown", handleClickOutside);
-//     };
-//   }, [showMenu]);
-
-//   return (
-//     <header className="bg-white shadow-sm border-b border-gray-200 px-6 py-4">
-//       <div className="flex items-center justify-between">
-//         <div className="flex items-center space-x-4">
-//           <h1 className="text-2xl font-bold text-gray-900">
-//             Good Morning, Chef!
-//           </h1>
-//           <div className="relative">
-//             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-//             <Input
-//               placeholder="Search orders, menu items..."
-//               className="pl-10 w-80 bg-gray-50 border-gray-200"
-//             />
-//           </div>
-//         </div>
-
-//         <div className="flex items-center space-x-4">
-//           <Button variant="ghost" size="icon" className="relative">
-//             <Bell className="h-5 w-5" />
-//             <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-//               3
-//             </span>
-//           </Button>
-
-//           <div className="flex items-center space-x-3 relative" ref={menuRef}>
-//             <div className="text-right">
-//               <p className="text-sm font-medium text-gray-900">
-//                 {authRestaurant.name}
-//               </p>
-//               <p className="text-xs text-gray-500">Premium Partner</p>
-//             </div>
-//             <button
-//               className="bg-gradient-to-r from-orange-500 to-red-500 p-2 rounded-full focus:outline-none"
-//               onClick={() => setShowMenu((v) => !v)}
-//               aria-label="User menu"
-//             >
-//               <User className="h-5 w-5 text-white" />
-//             </button>
-//             {showMenu && (
-//               <div className="absolute right-0 top-12 mt-2 w-40 bg-white rounded-lg shadow-lg border z-50 animate-fade-in">
-//                 <button
-//                   className="flex items-center w-full px-4 py-2 text-gray-700 hover:bg-orange-50 rounded-t-lg"
-//                   onClick={() => {
-//                     setShowMenu(false);
-//                     logout();
-//                     if (onLogout) onLogout();
-//                   }}
-//                 >
-//                   <LogOut className="h-4 w-4 mr-2" />
-//                   Logout
-//                 </button>
-//               </div>
-//             )}
-//           </div>
-//         </div>
-//       </div>
-//     </header>
-//   );
-// };
-
-// export default HeaderRest;
