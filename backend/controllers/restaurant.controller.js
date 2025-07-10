@@ -1,7 +1,10 @@
 import pool from "../db.js";
 import { generateToken } from "../utils/jwtGenerator.js";
 import bcrypt from "bcrypt";
-import { getIO } from '../socket.js';
+import { getIO } from "../socket.js";
+
+import cloudinary from "../utils/cloudinary.js";
+import fs from "fs";
 
 export const signup = async (req, res) => {
   try {
@@ -127,18 +130,28 @@ export const varify = async (req, res) => {
 
 export const add_menu = async (req, res) => {
   const id = req.user.id;
-  console.log("restaurant id", id);
   const { category, name, description, price, is_available, discount } =
     req.body;
 
-  console.log(req.body);
   try {
+    let imageUrl = null;
+    if (req.file) {
+      const result = await cloudinary.uploader.upload(req.file.path, {
+        folder: "restaurant_menu_items",
+      });
+      imageUrl = result.secure_url;
+      fs.unlinkSync(req.file.path); // Delete temp file after upload
+    }
+    if (!imageUrl) {
+      imageUrl =
+        "https://images.unsplash.com/photo-1546793665-c74683f339c1?w=300&h=200&fit=crop";
+    }
+
     let categoryResult = await pool.query(
       `SELECT * FROM menu_categories WHERE restaurant_id = $1 AND name = $2`,
       [id, category]
     );
 
-    // If category does not exist, insert it
     if (categoryResult.rows.length === 0) {
       categoryResult = await pool.query(
         `INSERT INTO menu_categories (restaurant_id, name) VALUES($1, $2) RETURNING *`,
@@ -148,15 +161,23 @@ export const add_menu = async (req, res) => {
 
     const category_id = categoryResult.rows[0].category_id;
 
-    const discountValue = discount === '' ? null : discount;
+    const discountValue = discount === "" ? null : discount;
 
     const newItem = await pool.query(
-      `INSERT INTO menu_items (category_id, name, description, price, is_available,discount)
-       VALUES ($1, $2, $3, $4, $5,$6) RETURNING *`,
-      [category_id, name, description, price, is_available, discountValue]
+      `INSERT INTO menu_items 
+      (category_id, name, description, price, is_available, discount, menu_item_image_url)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       RETURNING *`,
+      [
+        category_id,
+        name,
+        description,
+        price,
+        is_available,
+        discountValue,
+        imageUrl,
+      ]
     );
-    console.log("done");
-
     if (newItem.rows.length > 0) {
       res.status(201).json({
         message: "Menu item added successfully",
@@ -166,27 +187,27 @@ export const add_menu = async (req, res) => {
       res.status(400).json({ message: "Menu item not added" });
     }
   } catch (err) {
-    console.log("Error in add_menu controller", err.message);
-    res.status(500).json({ message: "internal server error" });
+    console.error("Error in add_menu controller:", err.message);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
 
 export const edit_menu = async (req, res) => {
   const restaurant_id = req.user.id;
-  //console.log("restaurant user id ", restaurant_id);
+  const menu_item_id = req.params.menu_item_id;
+
   const {
     name,
     description,
     price,
     is_available,
-    category_name,
-    menu_item_image_url,
+    discount,
+    category,
+    menu_item_image_url, // this is for fallback if no new image
   } = req.body;
-  const menu_item_id = req.params.menu_item_id;
-  //console.log("in edit menu controller", menu_item_id, restaurant_id);
-  console.log(req.body);
+
   try {
-    // Check if item exists and belongs to this restaurant
+    // Step 1: Check if the menu item exists and belongs to this restaurant
     const itemCheck = await pool.query(
       `SELECT mi.*, mc.restaurant_id FROM menu_items mi
        JOIN menu_categories mc ON mi.category_id = mc.category_id
@@ -200,33 +221,69 @@ export const edit_menu = async (req, res) => {
         .json({ message: "Menu item not found or not authorized" });
     }
 
-    // Update category if changed
+    let imageUrl = menu_item_image_url;
+
+    // Step 2: Handle image upload if new file provided
+    if (req.file) {
+      // Delete old image from Cloudinary if it exists
+      const oldImageUrl = itemCheck.rows[0].menu_item_image_url;
+      if (oldImageUrl) {
+        const parts = oldImageUrl.split("/");
+        const publicIdWithExt = parts[parts.length - 1]; // e.g., abc123.jpg
+        const publicId = `restaurant_menu_items/${
+          publicIdWithExt.split(".")[0]
+        }`;
+
+        await cloudinary.uploader.destroy(publicId).catch(() => {
+          console.warn("Previous image deletion failed or skipped.");
+        });
+      }
+
+      // Upload new image to Cloudinary
+      const result = await cloudinary.uploader.upload(req.file.path, {
+        folder: "restaurant_menu_items",
+      });
+      imageUrl = result.secure_url;
+
+      // Remove temp file
+      fs.unlinkSync(req.file.path);
+    }
+
+    // Step 3: Check or create category
     let categoryResult = await pool.query(
       `SELECT * FROM menu_categories WHERE restaurant_id = $1 AND name = $2`,
-      [restaurant_id, category_name]
+      [restaurant_id, category]
     );
 
     if (categoryResult.rows.length === 0) {
       categoryResult = await pool.query(
         `INSERT INTO menu_categories (restaurant_id, name) VALUES ($1, $2) RETURNING *`,
-        [restaurant_id, category_name]
+        [restaurant_id, category]
       );
     }
 
     const category_id = categoryResult.rows[0].category_id;
 
+    // Step 4: Perform the update
     const updatedItem = await pool.query(
       `UPDATE menu_items
-       SET name = $1, description = $2, price = $3, is_available = $4, category_id = $5, menu_item_image_url=$6
-       WHERE menu_item_id = $7
+       SET name = $1,
+           description = $2,
+           price = $3,
+           is_available = $4,
+           discount = $5,
+           category_id = $6,
+           menu_item_image_url = $7
+       WHERE menu_item_id = $8
        RETURNING *`,
       [
         name,
         description,
         price,
         is_available,
+        discount || null,
         category_id,
-        menu_item_image_url,
+        imageUrl,
         menu_item_id,
       ]
     );
@@ -237,8 +294,8 @@ export const edit_menu = async (req, res) => {
       item: updatedItem.rows[0],
     });
   } catch (err) {
-    console.log("Error in edit_menu controller", err.message);
-    res.status(500).json({ message: "internal server error" });
+    console.error("Error in edit_menu controller:", err.message);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
 
@@ -477,47 +534,55 @@ export const get_orders = async (req, res) => {
 export const updateOrderStatus = async (req, res) => {
   const { orderId } = req.params;
   const { status } = req.body; // expecting 'preparing' or 'restaurant_rejected' or 'ready_for_pickup'
-  console.log(`Backend received update status request for order ${orderId} with status: ${status}`);
+  console.log(
+    `Backend received update status request for order ${orderId} with status: ${status}`
+  );
 
-  if (!['preparing', 'restaurant_rejected', 'ready_for_pickup'].includes(status)) {
-    return res.status(400).json({ message: 'Invalid status' });
+  if (
+    !["preparing", "restaurant_rejected", "ready_for_pickup"].includes(status)
+  ) {
+    return res.status(400).json({ message: "Invalid status" });
   }
 
   const client = await pool.connect();
 
   try {
-    await client.query('BEGIN');
+    await client.query("BEGIN");
 
     const orderResult = await client.query(
-      'UPDATE orders SET status = $1 WHERE order_id = $2 RETURNING *',
+      "UPDATE orders SET status = $1 WHERE order_id = $2 RETURNING *",
       [status, orderId]
     );
 
     if (orderResult.rows.length === 0) {
-      await client.query('ROLLBACK');
-      return res.status(404).json({ message: 'Order not found' });
+      await client.query("ROLLBACK");
+      return res.status(404).json({ message: "Order not found" });
     }
 
     const order = orderResult.rows[0];
 
     // Emit order status updated event to the restaurant
-    getIO().to(`restaurant_${order.restaurant_id}`).emit('order_status_updated', order);
+    getIO()
+      .to(`restaurant_${order.restaurant_id}`)
+      .emit("order_status_updated", order);
 
-    if (status === 'ready_for_pickup') {
-        await client.query(
-            'UPDATE deliveries SET status = \'pending\' WHERE order_id = $1',
-            [orderId]
-        );
+    if (status === "ready_for_pickup") {
+      await client.query(
+        "UPDATE deliveries SET status = 'pending' WHERE order_id = $1",
+        [orderId]
+      );
       // Emit new delivery event to all riders
-      getIO().to('riders').emit('new_delivery', order);
+      getIO().to("riders").emit("new_delivery", order);
     }
 
-    await client.query('COMMIT');
-    res.status(200).json({ message: 'Order status updated successfully', order: order });
+    await client.query("COMMIT");
+    res
+      .status(200)
+      .json({ message: "Order status updated successfully", order: order });
   } catch (error) {
-    await client.query('ROLLBACK');
-    console.error('Error updating order status:', error);
-    res.status(500).send('Server error');
+    await client.query("ROLLBACK");
+    console.error("Error updating order status:", error);
+    res.status(500).send("Server error");
   } finally {
     client.release();
   }

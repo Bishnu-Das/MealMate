@@ -28,25 +28,34 @@ export const AddMenuItemRest = ({ onBack, onSave }) => {
     name: "",
     description: "",
     price: "",
-    category: "Pizza",
+    category: "",
     image: "",
     discount: "",
   });
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
 
-  const handleSubmit = (e) => {
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const newItem = {
-      name: formData.name,
-      description: formData.description,
-      price: formData.price,
-      category: formData.category,
-      is_available: true,
-      disscount: formData.discount,
-      image:
-        formData.image ||
-        "https://images.unsplash.com/photo-1546793665-c74683f339c1?w=300&h=200&fit=crop",
-    };
-    add_menu_item(newItem);
+    const formPayload = new FormData();
+    formPayload.append("name", formData.name);
+    formPayload.append("description", formData.description);
+    formPayload.append("price", formData.price);
+    formPayload.append("category", formData.category);
+    formPayload.append("discount", formData.discount);
+    formPayload.append("is_available", true);
+    if (imageFile) {
+      formPayload.append("image", imageFile);
+    }
+
+    await add_menu_item(formPayload);
     onBack();
   };
 
@@ -56,7 +65,7 @@ export const AddMenuItemRest = ({ onBack, onSave }) => {
   };
 
   return (
-    <div className="p-6 space-y-6 text-white">
+    <div className="p-6 space-y-6 text-white bg-gray-900 min-h-screen">
       {/* Header */}
       <div className="flex items-center space-x-4">
         <Button
@@ -79,8 +88,8 @@ export const AddMenuItemRest = ({ onBack, onSave }) => {
       <div className="max-w-2xl">
         <Card className="bg-gray-900 border border-gray-700">
           <CardHeader>
-            <CardTitle>Item Details</CardTitle>
-            <CardDescription className="text-gray-400">
+            <CardTitle className="text-gray-200">Item Details</CardTitle>
+            <CardDescription className="text-gray-200">
               Fill in the information for your new menu item
             </CardDescription>
           </CardHeader>
@@ -89,8 +98,15 @@ export const AddMenuItemRest = ({ onBack, onSave }) => {
               {/* Image Upload */}
               <div className="space-y-2">
                 <Label htmlFor="image">Item Image</Label>
-                <div className="border-2 border-dashed border-gray-700 rounded-lg p-6 text-center hover:border-gray-500 transition-colors">
+                <div className="border-2 border-dashed border-gray-700 rounded-lg p-6 text-center hover:border-gray-500 transition-colors relative">
                   <Upload className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                  {imagePreview && (
+                    <img
+                      src={imagePreview}
+                      alt="Preview"
+                      className="mx-auto mb-4 h-32 object-cover rounded"
+                    />
+                  )}
                   <p className="text-sm text-gray-400 mb-2">
                     Click to upload or drag and drop
                   </p>
@@ -100,10 +116,9 @@ export const AddMenuItemRest = ({ onBack, onSave }) => {
                   <Input
                     id="image"
                     name="image"
-                    type="text"
-                    placeholder="Or paste image URL here"
-                    value={formData.image}
-                    onChange={handleInputChange}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
                     className="mt-4 bg-gray-800 border-gray-700 text-white placeholder:text-gray-400"
                   />
                 </div>
@@ -225,234 +240,3 @@ export const AddMenuItemRest = ({ onBack, onSave }) => {
     </div>
   );
 };
-
-// import { useState } from "react";
-// import {
-//   Card,
-//   CardContent,
-//   CardDescription,
-//   CardHeader,
-//   CardTitle,
-// } from "../components/ui/card";
-// import { Button } from "../components/ui/button";
-// import { Input } from "../components/ui/input";
-// import { Label } from "../components/ui/label";
-// import { Textarea } from "../components/ui/textarea";
-// import { ArrowLeft, Upload, Save } from "lucide-react";
-// import { restaurantAuthStore } from "../store/restaurantAuthStore";
-
-// const categories = [
-//   "Pizza",
-//   "Burgers",
-//   "Pasta",
-//   "Salads",
-//   "Desserts",
-//   "Beverages",
-// ];
-
-// export const AddMenuItemRest = ({ onBack, onSave }) => {
-//   const { add_menu_item } = restaurantAuthStore();
-//   const [formData, setFormData] = useState({
-//     name: "",
-//     description: "",
-//     price: "",
-//     category: "Pizza",
-//     image: "",
-//     discount: "",
-//   });
-
-//   const handleSubmit = (e) => {
-//     e.preventDefault();
-//     const newItem = {
-//       name: formData.name,
-//       description: formData.description,
-//       price: formData.price,
-//       category: formData.category,
-//       is_available: true,
-//       disscount: formData.discount,
-//       image:
-//         formData.image ||
-//         "https://images.unsplash.com/photo-1546793665-c74683f339c1?w=300&h=200&fit=crop",
-//     };
-//     add_menu_item(newItem);
-//     //onSave(newItem);
-
-//     onBack();
-//   };
-
-//   const handleInputChange = (e) => {
-//     const { name, value } = e.target;
-//     setFormData((prev) => ({ ...prev, [name]: value }));
-//   };
-
-//   return (
-//     <div className="p-6 space-y-6">
-//       {/* Header */}
-//       <div className="flex items-center space-x-4">
-//         <Button
-//           variant="outline"
-//           onClick={onBack}
-//           className="flex items-center space-x-2"
-//         >
-//           <ArrowLeft className="h-4 w-4" />
-//           <span>Back to Menu</span>
-//         </Button>
-//         <div>
-//           <h1 className="text-2xl font-bold text-gray-900">
-//             Add New Menu Item
-//           </h1>
-//           <p className="text-gray-600">
-//             Create a new item for your restaurant menu
-//           </p>
-//         </div>
-//       </div>
-
-//       {/* Form */}
-//       <div className="max-w-2xl">
-//         <Card>
-//           <CardHeader>
-//             <CardTitle>Item Details</CardTitle>
-//             <CardDescription>
-//               Fill in the information for your new menu item
-//             </CardDescription>
-//           </CardHeader>
-//           <CardContent>
-//             <form onSubmit={handleSubmit} className="space-y-6">
-//               {/* Image Upload */}
-//               <div className="space-y-2">
-//                 <Label htmlFor="image">Item Image</Label>
-//                 <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
-//                   <Upload className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-//                   <p className="text-sm text-gray-600 mb-2">
-//                     Click to upload or drag and drop
-//                   </p>
-//                   <p className="text-xs text-gray-500">
-//                     PNG, JPG, GIF up to 10MB
-//                   </p>
-//                   <Input
-//                     id="image"
-//                     name="image"
-//                     type="text"
-//                     placeholder="Or paste image URL here"
-//                     value={formData.image}
-//                     onChange={handleInputChange}
-//                     className="mt-4"
-//                   />
-//                 </div>
-//               </div>
-
-//               {/* Item Name */}
-//               <div className="space-y-2">
-//                 <Label htmlFor="name">Item Name *</Label>
-//                 <Input
-//                   id="name"
-//                   name="name"
-//                   type="text"
-//                   placeholder="e.g., Margherita Pizza"
-//                   value={formData.name}
-//                   onChange={handleInputChange}
-//                   required
-//                 />
-//               </div>
-
-//               {/* Description */}
-//               <div className="space-y-2">
-//                 <Label htmlFor="description">Description *</Label>
-//                 <Textarea
-//                   id="description"
-//                   name="description"
-//                   placeholder="Describe your menu item ingredients and preparation..."
-//                   value={formData.description}
-//                   onChange={handleInputChange}
-//                   required
-//                   rows={3}
-//                 />
-//               </div>
-
-//               {/* Price and Category */}
-//               <div className="grid grid-cols-2 gap-4">
-//                 <div className="space-y-2">
-//                   <Label htmlFor="price">Price *</Label>
-//                   <div className="relative">
-//                     <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
-//                       $
-//                     </span>
-//                     <Input
-//                       id="price"
-//                       name="price"
-//                       type="number"
-//                       step="0.01"
-//                       placeholder="0.00"
-//                       value={formData.price}
-//                       onChange={handleInputChange}
-//                       className="pl-8"
-//                       required
-//                     />
-//                   </div>
-//                 </div>
-
-//                 <div className="space-y-2">
-//                   <Label htmlFor="category">Category *</Label>
-//                   <select
-//                     id="category"
-//                     name="category"
-//                     value={formData.category}
-//                     onChange={handleInputChange}
-//                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-//                     required
-//                   >
-//                     {categories.map((category) => (
-//                       <option key={category} value={category}>
-//                         {category}
-//                       </option>
-//                     ))}
-//                   </select>
-//                 </div>
-//               </div>
-
-//               {/*discount*/}
-//               <div className="space-y-2">
-//                 <Label htmlFor="price">Discount</Label>
-//                 <div className="relative">
-//                   <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
-//                     $
-//                   </span>
-//                   <Input
-//                     id="discount"
-//                     name="discount"
-//                     type="number"
-//                     step="0.01"
-//                     placeholder="0.00"
-//                     value={formData.discount}
-//                     onChange={handleInputChange}
-//                     className="pl-8"
-//                   />
-//                 </div>
-//               </div>
-
-//               {/* Submit Buttons */}
-//               <div className="flex space-x-4 pt-4">
-//                 <Button
-//                   type="submit"
-//                   className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 flex-1"
-//                   onClick={handleSubmit}
-//                 >
-//                   <Save className="h-4 w-4 mr-2" />
-//                   Save Menu Item
-//                 </Button>
-//                 <Button
-//                   type="button"
-//                   variant="outline"
-//                   onClick={onBack}
-//                   className="flex-1"
-//                 >
-//                   Cancel
-//                 </Button>
-//               </div>
-//             </form>
-//           </CardContent>
-//         </Card>
-//       </div>
-//     </div>
-//   );
-// };

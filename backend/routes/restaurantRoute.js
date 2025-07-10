@@ -2,6 +2,7 @@ import express from "express";
 import validinfo from "../middleware/validinfo.js";
 import authorization from "../middleware/authorization.js";
 import authorizeRoles from "../middleware/athorizeRoles.js";
+import upload from "../middleware/upload.js";
 
 import {
   signup as resturant_signup,
@@ -25,12 +26,19 @@ const role = "restaurant";
 router.post("/register", validinfo, resturant_signup);
 router.post("/login", validinfo, restaurant_login);
 router.get("/logout", logout);
-router.post("/add_menu", authorization, authorizeRoles(role), add_menu);
+router.post(
+  "/add_menu",
+  authorization,
+  authorizeRoles(role),
+  upload.single("image"),
+  add_menu
+);
 router.get("/is-varify", authorization, authorizeRoles(role), varify);
 router.put(
   "/edit_menu/:menu_item_id",
   authorization,
   authorizeRoles(role),
+  upload.single("image"),
   edit_menu
 );
 router.delete(
@@ -54,6 +62,11 @@ router.get(
   getRestaurantProfile
 );
 router.post("/edit_profile", authorization, authorizeRoles(role), editProfile);
-router.put("/orders/:orderId/status", authorization, authorizeRoles(role), updateOrderStatus);
+router.put(
+  "/orders/:orderId/status",
+  authorization,
+  authorizeRoles(role),
+  updateOrderStatus
+);
 router.get("/orders", authorization, authorizeRoles(role), get_orders);
 export { router };
