@@ -19,15 +19,14 @@ import DeliveryHistoryPage from "./rider/pages/DeliveryHistoryPage";
 import OrderDetailsPage from "./rider/pages/OrderDetailsPage";
 import ProfilePageRider from "./rider/pages/ProfilePageRider";
 
-import OrderHistoryPage from './pages/OrderHistoryPage';
-
+import OrderHistoryPage from "./pages/OrderHistoryPage";
 
 import Navbar from "./Components/skeleton/Navbar";
 import HomepageRest from "./restaurant/pages/HomepageRest";
 import RestaurantProfie from "./pages/RestaurantProfile";
 import CheckoutPage from "./pages/CheckoutPage";
 import SimulatePaymentGateway from "./pages/SimulatePaymentGateway";
-import { Toaster } from "./restaurant/components/ui/sonner";
+import { Toaster } from "react-hot-toast";
 
 import { element } from "prop-types";
 
@@ -35,7 +34,8 @@ function App() {
   const { authUser, checkAuth, isCheckingAuth } = userAuthStore();
   const { authRestaurant, checkAuthRestaurant, isCheckingRestaurant } =
     restaurantAuthStore();
-  const { authrider, checkAuthRider, isCheckingAuthRider } = useRiderAuthStore();
+  const { authrider, checkAuthRider, isCheckingAuthRider } =
+    useRiderAuthStore();
 
   useEffect(() => {
     checkAuth();
@@ -53,30 +53,33 @@ function App() {
   return (
     <div>
       <Toaster />
-        {/* <Navbar /> */}
-        <Routes>
-          {/* Customer */}
-          <Route path="/" element={<HomePage />} />
-          <Route
-            path="/login"
-            element={!authUser ? <LoginPage /> : <Navigate to="/" />}
-          />
-          <Route
-            path="/signup"
-            element={!authUser ? <SignupPage /> : <Navigate to="/" />}
-          />
-          <Route
-            path="/profile"
-            element={authUser ? <ProfilePage /> : <Navigate to="/login" />}
-          />
-          <Route path="/restaurants" element={<RestaurantPage />} />
-          <Route path="/restaurant/:id" element={<RestaurantProfie />} />
-          <Route path="/checkout" element={<CheckoutPage />} />
-          <Route path="/order-history" element={<OrderHistoryPage />} />
-          <Route path="/simulate-payment-gateway" element={<SimulatePaymentGateway />} />
+      {/* <Navbar /> */}
+      <Routes>
+        {/* Customer */}
+        <Route path="/" element={<HomePage />} />
+        <Route
+          path="/login"
+          element={!authUser ? <LoginPage /> : <Navigate to="/" />}
+        />
+        <Route
+          path="/signup"
+          element={!authUser ? <SignupPage /> : <Navigate to="/" />}
+        />
+        <Route
+          path="/profile"
+          element={authUser ? <ProfilePage /> : <Navigate to="/login" />}
+        />
+        <Route path="/restaurants" element={<RestaurantPage />} />
+        <Route path="/restaurant/:id" element={<RestaurantProfie />} />
+        <Route path="/checkout" element={<CheckoutPage />} />
+        <Route path="/order-history" element={<OrderHistoryPage />} />
+        <Route
+          path="/simulate-payment-gateway"
+          element={<SimulatePaymentGateway />}
+        />
 
-          {/* Restaurant */}
-          {/* <Route
+        {/* Restaurant */}
+        {/* <Route
             path="/partner/signup"
             element={
               !authRestaurant ? <LoginPageRest /> : <Navigate to="/partner" />
@@ -92,34 +95,42 @@ function App() {
               )
             }
           /> */}
-          <Route path="/partner" element={<HomepageRest />} />
+        <Route path="/partner" element={<HomepageRest />} />
 
-          {/* Rider */}
-          <Route
-            path="/rider/login"
-            element={!authrider ? <LoginPageRider /> : <Navigate to="/rider" />}
-          />
-          <Route
-            path="/rider/signup"
-            element={!authrider ? <SignupPageRider /> : <Navigate to="/rider" />}
-          />
-          <Route
-            path="/rider"
-            element={authrider ? <HomepageRider /> : <Navigate to="/rider/login" />}
-          />
-          <Route
-            path="/rider/history"
-            element={authrider ? <DeliveryHistoryPage /> : <Navigate to="/rider/login" />}
-          />
-          <Route
-            path="/rider/data/profile"
-            element={authrider ? <ProfilePageRider /> : <Navigate to="/rider/login" />}
-          />
-          <Route
-            path="/rider/data/orders/:orderId"
-            element={authrider ? <OrderDetailsPage /> : <Navigate to="/rider/login" />}
-          />
-        </Routes>
+        {/* Rider */}
+        <Route
+          path="/rider/login"
+          element={!authrider ? <LoginPageRider /> : <Navigate to="/rider" />}
+        />
+        <Route
+          path="/rider/signup"
+          element={!authrider ? <SignupPageRider /> : <Navigate to="/rider" />}
+        />
+        <Route
+          path="/rider"
+          element={
+            authrider ? <HomepageRider /> : <Navigate to="/rider/login" />
+          }
+        />
+        <Route
+          path="/rider/history"
+          element={
+            authrider ? <DeliveryHistoryPage /> : <Navigate to="/rider/login" />
+          }
+        />
+        <Route
+          path="/rider/data/profile"
+          element={
+            authrider ? <ProfilePageRider /> : <Navigate to="/rider/login" />
+          }
+        />
+        <Route
+          path="/rider/data/orders/:orderId"
+          element={
+            authrider ? <OrderDetailsPage /> : <Navigate to="/rider/login" />
+          }
+        />
+      </Routes>
     </div>
   );
 }

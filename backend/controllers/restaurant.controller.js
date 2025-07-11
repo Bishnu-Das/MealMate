@@ -206,6 +206,8 @@ export const edit_menu = async (req, res) => {
     menu_item_image_url, // this is for fallback if no new image
   } = req.body;
 
+  //console.log(req.body);
+
   try {
     // Step 1: Check if the menu item exists and belongs to this restaurant
     const itemCheck = await pool.query(
@@ -244,6 +246,7 @@ export const edit_menu = async (req, res) => {
         folder: "restaurant_menu_items",
       });
       imageUrl = result.secure_url;
+      //console.log(imageUrl);
 
       // Remove temp file
       fs.unlinkSync(req.file.path);
@@ -317,6 +320,19 @@ export const delete_menu = async (req, res) => {
       return res
         .status(404)
         .json({ message: "Menu item not found or not authorized" });
+    }
+
+    const imageUrl = itemCheck.rows[0].menu_item_image_url;
+
+    if (imageUrl) {
+      const publicIdMatch = imageUrl.match(
+        /\/upload\/(?:v\d+\/)?(.+)\.[a-zA-Z]+$/
+      );
+      const publicId = publicIdMatch?.[1];
+
+      if (publicId) {
+        await cloudinary.uploader.destroy(publicId);
+      }
     }
 
     await pool.query(`DELETE FROM menu_items WHERE menu_item_id = $1`, [
