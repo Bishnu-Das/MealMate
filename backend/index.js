@@ -15,6 +15,7 @@ import customerOrderRoutes from "./customer/order/orderRoutes.js";
 import customerPaymentRoutes from "./customer/order/paymentRoutes.js";
 import restaurantOrder from "./restaurants/order/orderRoutes.js";
 import restaurnatStat from "./restaurants/stats/statsRoutes.js";
+import reviewRoutes from "./review_rating/reviewRoutes.js";
 
 dotenv.config();
 
@@ -51,6 +52,8 @@ console.log("Registering customer order routes...");
 app.use("/api/customer/order", customerOrderRoutes);
 console.log("Registering customer payment routes...");
 app.use("/api/customer/payment", customerPaymentRoutes);
+console.log("Registering review routes...");
+app.use("/api/customer/review", reviewRoutes);
 
 app.use("/api/restaurant", restaurantOrder); //restaurant order management
 

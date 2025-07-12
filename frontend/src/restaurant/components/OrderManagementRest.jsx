@@ -73,7 +73,9 @@ function OrderCard({ order, onUpdateStatus, onRejectOrder }) {
         <div className="flex justify-between items-start">
           <div className="space-y-1">
             <div className="flex items-center space-x-2">
-              <CardTitle className="text-lg">Order #{order.order_id}</CardTitle>
+              <CardTitle className="text-lgt text-gray-300">
+                Order #{order.order_id}
+              </CardTitle>
               <Badge className={getStatusColor(order.status)}>
                 {order.status ? order.status.replace(/_/g, " ") : "N/A"}
               </Badge>
@@ -92,7 +94,7 @@ function OrderCard({ order, onUpdateStatus, onRejectOrder }) {
             </div>
           </div>
           <div className="text-right">
-            <p className="text-xl font-bold text-gray-900">
+            <p className="text-xl font-bold text-purple-500">
               ${parseFloat(order.total_amount).toFixed(2)}
             </p>
             <p className="text-sm text-gray-500">
@@ -123,7 +125,7 @@ function OrderCard({ order, onUpdateStatus, onRejectOrder }) {
             </div>
           </div>
           <div className="space-y-2">
-            <h4 className="font-medium text-gray-900">Order Items:</h4>
+            <h4 className="font-medium text-gray-100">Order Items:</h4>
             {order.items &&
               order.items.map((item, index) => (
                 <div key={index} className="flex justify-between text-sm">

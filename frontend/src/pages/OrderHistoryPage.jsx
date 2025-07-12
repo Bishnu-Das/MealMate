@@ -3,8 +3,12 @@ import { axiosInstance } from '../../lib/axios';
 import { Button } from '../restaurant/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../restaurant/components/ui/dialog';
+import RatingModal from '../Components/RatingModal';
 
 const OrderHistoryPage = () => {
+  const [isRatingModalOpen, setIsRatingModalOpen] = useState(false);
+  const [ratingTarget, setRatingTarget] = useState(null); // { type: 'restaurant' | 'rider', id: order.restaurant_id | order.rider_id, orderId: order.order_id }
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -75,6 +79,35 @@ const OrderHistoryPage = () => {
                 <p className="text-lg font-bold text-gray-900">${order.total_amount}</p>
               </div>
 
+              {order.status === 'delivered' && (
+                <div className="mt-4 flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setRatingTarget({ type: 'restaurant', id: order.restaurant_id, orderId: order.order_id });
+                      setIsRatingModalOpen(true);
+                    }}
+                    disabled={order.has_restaurant_review}
+                  >
+                    {order.has_restaurant_review ? 'Restaurant Rated' : 'Rate Restaurant'}
+                  </Button>
+                  {order.rider_id && ( // Only show if a rider was assigned
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setRatingTarget({ type: 'rider', id: order.rider_id, orderId: order.order_id });
+                        setIsRatingModalOpen(true);
+                      }}
+                      disabled={order.has_rider_review}
+                    >
+                      {order.has_rider_review ? 'Rider Rated' : 'Rate Rider'}
+                    </Button>
+                  )}
+                </div>
+              )}
+
               <div className="mt-4 border-t pt-4">
                 <h3 className="text-md font-semibold mb-2">Items:</h3>
                 <ul className="list-disc pl-5 space-y-1">
@@ -92,6 +125,31 @@ const OrderHistoryPage = () => {
           <p className="text-gray-600">You have no orders yet.</p>
         )}
       </div>
+
+      <RatingModal
+        isOpen={isRatingModalOpen}
+        onClose={() => setIsRatingModalOpen(false)}
+        target={ratingTarget}
+        onReviewSubmitted={(type) => {
+          setOrders((prevOrders) =>
+            prevOrders.map((order) => {
+              if (order.order_id === ratingTarget.orderId) {
+                return {
+                  ...order,
+                  has_restaurant_review:
+                    type === "restaurant"
+                      ? true
+                      : order.has_restaurant_review,
+                  has_rider_review:
+                    type === "rider" ? true : order.has_rider_review,
+                };
+              }
+              return order;
+            })
+          );
+          setIsRatingModalOpen(false);
+        }}
+      />
     </div>
   );
 };

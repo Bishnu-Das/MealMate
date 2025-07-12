@@ -1,9 +1,11 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import { Star, Clock, MapPin, Info, Truck, DollarSign, Award } from "lucide-react";
 import restaurantHero from "../../assets/burger-deluxe.jpg";
 import { Badge } from "../../restaurant/components/ui/badge";
 
 export function RestaurantHeader({ restaurant }) {
+  const navigate = useNavigate();
   return (
     <>
       {/* Hero Image + Overlay */}
@@ -39,10 +41,13 @@ export function RestaurantHeader({ restaurant }) {
             <p className="text-xl text-gray-200 mb-4 font-medium">{restaurant.cuisine}</p>
             
             <div className="flex flex-wrap items-center gap-6 text-sm">
-              <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-full px-4 py-2">
+              <div
+                className="flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-full px-4 py-2 cursor-pointer"
+                onClick={() => navigate(`/restaurant/${restaurant.restaurant_id}/reviews`)}
+              >
                 <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-                <span className="font-bold text-lg">{restaurant.rating}</span>
-                <span className="text-gray-300">({restaurant.reviewCount}+ reviews)</span>
+                <span className="font-bold text-lg">{restaurant.average_rating ? parseFloat(restaurant.average_rating).toFixed(1) : 'N/A'}</span>
+                <span className="text-gray-300">Reviews</span>
               </div>
               
               <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-full px-4 py-2">

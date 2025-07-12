@@ -7,12 +7,12 @@ const RestaurantCard = ({ restaurant }) => {
     restaurant;
 
   const navigate = useNavigate();
-  const handleCardClick = () => {
-    navigate(`/restaurants/${restaurant_id}`);
-  };
+  // const handleCardClick = () => {
+  //   navigate(`/restaurant/${restaurant_id}`);
+  // };
 
   return (
-    <Link to={`/restaurants/${restaurant_id}`} className="group">
+    <Link to={`/restaurant/${restaurant_id}`} className="group">
       <div className="card bg-base-100 shadow-xl hover:shadow-2xl transition-all duration-300 group-hover:-translate-y-2">
         <figure className="relative overflow-hidden">
           <img

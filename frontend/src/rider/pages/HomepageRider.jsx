@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import { useRiderAuthStore } from "../store/riderAuthStore";
 import Navbar from "../../Components/skeleton/Navbar";
-import { Loader2, MapPin, Phone, Mail, User, Package, Clock, CheckCircle, Truck, History, Settings, LogOut, Bell } from "lucide-react";
+import { Loader2, MapPin, Phone, Mail, User, Package, Clock, CheckCircle, Truck, History, Settings, LogOut, Bell, MessageCircle } from "lucide-react";
 import { axiosInstance } from "../../../lib/axios";
 import toast from "react-hot-toast";
 import socketService from "../../services/socketService";
@@ -35,6 +35,7 @@ const HomepageRider = () => {
 
     if (authrider) {
       fetchDashboardData();
+      console.log("Dashboard data:", dashboardData);
 
       socketService.connect("riders"); // Connect as a rider
 
@@ -443,7 +444,13 @@ const HomepageRider = () => {
 
         {/* Action Buttons */}
         <div className="flex flex-wrap gap-4 justify-center">
-
+          <Link
+            to="/rider/chats"
+            className="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 flex items-center"
+          >
+            <MessageCircle className="size-5 mr-2" />
+            Chats
+          </Link>
           <Link
             to="/rider/history"
             className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 flex items-center"

@@ -280,15 +280,14 @@ export const getOrderDetails = async (req, res) => {
     const order = orderResult.rows[0];
 
     // If the order is pending, any rider can view its details
-    if (order.status === 'pending') {
+    // A rider can view an order if it's not yet assigned to any rider (rider_id is NULL)
+    // OR if it is assigned to the current rider.
+    if (order.rider_id === null || order.rider_id === riderId) {
       return res.status(200).json({ order: order });
     }
 
-    // For other statuses (e.g., preparing, out_for_delivery, delivered),
-    // only the assigned rider can view the details.
-    if (order.rider_id !== riderId) {
-      return res.status(403).json({ message: "Order not authorized for this rider" });
-    }
+    // If the order is assigned to a different rider, deny access.
+    return res.status(403).json({ message: "Order not authorized for this rider" });
 
     if (orderResult.rows.length === 0) {
       return res.status(404).json({ message: "Order not found or not authorized" });
