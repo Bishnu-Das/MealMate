@@ -20,7 +20,9 @@ CREATE TABLE restaurants (
   email VARCHAR(100),
   location_id INT,
   average_rating DECIMAL(3,2) DEFAULT 0.0,
-  image_url VARCHAR(255)
+  image_url VARCHAR(255),
+  cuisine_type VARCHAR(100),
+  descriptions VARCHAR(255),
 );
 
 -- LOCATIONS (create after restaurants to avoid circular reference)

@@ -402,7 +402,11 @@ export const getRestaurantProfile = async (req, res) => {
     SELECT 
       r.restaurant_id,
       r.name AS restaurant_name,
+      r.image_url,
+      r.average_rating AS rating,
       r.phone,
+      r.descriptions as description,
+      r.cuisine_type,
       r.email,
       l.street,
       l.city,
@@ -443,8 +447,12 @@ export const getRestaurantProfile = async (req, res) => {
     // cuisine_type and description are not in your schema, so omit them
     phone: r.phone,
     email: r.email,
-    address,
+    address: r.street + "," + r.city + "," + r.postal_code,
     // delivery_settings is not in your schema, so omit or set as empty/default
+    restaurant_image: r.image_url,
+    rating: r.rating,
+    description: r.description,
+    cuisine_type: r.cuisine_type,
     delivery_settings: {
       delivery_fee: "",
       min_order: "",
@@ -463,51 +471,143 @@ export const getRestaurantProfile = async (req, res) => {
 
 export const editProfile = async (req, res) => {
   const restaurant_id = req.user.id;
+
+  // Extract fields from body (flat fields because it's multipart/form-data)
   const {
     restaurant_name,
     phone,
     address,
-    delivery_settings,
-    operating_hours,
+    email,
+    cuisine_type,
+    description,
+    delivery_fee,
+    min_order,
+    delivery_time,
+    delivery_radius,
+    operating_hours: operatingHoursRaw,
   } = req.body;
 
+  console.log("Received fields:", req.body);
+  console.log("Received file:", req.file);
+
+  let operating_hours = [];
   try {
-    // 1. Update restaurant name and phone
-    await pool.query(
-      "UPDATE restaurants SET name = $1, phone = $2 WHERE restaurant_id = $3",
-      [restaurant_name, phone, restaurant_id]
+    if (operatingHoursRaw) {
+      operating_hours = JSON.parse(operatingHoursRaw);
+    }
+  } catch (err) {
+    console.warn("Invalid JSON for operating_hours");
+    return res.status(400).json({ message: "Invalid operating_hours format" });
+  }
+
+  try {
+    // Step 1: Get current image URL from DB
+    const oldData = await pool.query(
+      "SELECT image_url FROM restaurants WHERE restaurant_id = $1",
+      [restaurant_id]
     );
 
-    // 2. Update address (if you have a locations table)
+    let imageUrl = oldData.rows[0]?.image_url || null;
+
+    // Step 2: Handle new image upload
+    if (req.file) {
+      if (imageUrl) {
+        const parts = imageUrl.split("/");
+        const filenameWithExt = parts[parts.length - 1];
+        const publicId = `restaurant_profile/${filenameWithExt.split(".")[0]}`;
+
+        try {
+          await cloudinary.uploader.destroy(publicId);
+        } catch (err) {
+          console.warn("Image deletion failed:", err.message);
+        }
+      }
+
+      const uploaded = await cloudinary.uploader.upload(req.file.path, {
+        folder: "restaurant_profile",
+      });
+      imageUrl = uploaded.secure_url;
+      fs.unlinkSync(req.file.path); // remove local temp file
+    }
+
+    // Step 3: Update restaurant basic info
+    await pool.query(
+      `UPDATE restaurants 
+       SET name = $1, phone = $2, image_url = $3, email = $4, cuisine_type = $5, descriptionS = $6 
+       WHERE restaurant_id = $7`,
+      [
+        restaurant_name,
+        phone,
+        imageUrl,
+        email,
+        cuisine_type,
+        description,
+        restaurant_id,
+      ]
+    );
+
+    // Step 4: Update address (user_locations table)
     if (address) {
       const [street = "", city = "", postal_code = ""] = address
         .split(",")
         .map((s) => s.trim());
+
       const locRes = await pool.query(
         "SELECT location_id FROM user_locations WHERE restaurant_id = $1",
         [restaurant_id]
       );
+
       if (locRes.rows.length > 0) {
         const location_id = locRes.rows[0].location_id;
         await pool.query(
           "UPDATE user_locations SET street = $1, city = $2, postal_code = $3 WHERE location_id = $4",
           [street, city, postal_code, location_id]
         );
+      } else {
+        await pool.query(
+          "INSERT INTO user_locations (restaurant_id, street, city, postal_code) VALUES ($1, $2, $3, $4)",
+          [restaurant_id, street, city, postal_code]
+        );
       }
     }
 
-    // 3. Upsert operating hours using your PostgreSQL function
-    if (Array.isArray(operating_hours)) {
+    // // Step 5: Update delivery_settings table
+    // const delivRes = await pool.query(
+    //   "SELECT restaurant_id FROM delivery_settings WHERE restaurant_id = $1",
+    //   [restaurant_id]
+    // );
+
+    // if (delivRes.rows.length > 0) {
+    //   await pool.query(
+    //     `UPDATE delivery_settings
+    //      SET delivery_fee = $1, min_order = $2, delivery_time = $3, delivery_radius = $4
+    //      WHERE restaurant_id = $5`,
+    //     [delivery_fee, min_order, delivery_time, delivery_radius, restaurant_id]
+    //   );
+    // } else {
+    //   await pool.query(
+    //     `INSERT INTO delivery_settings
+    //      (restaurant_id, delivery_fee, min_order, delivery_time, delivery_radius)
+    //      VALUES ($1, $2, $3, $4, $5)`,
+    //     [restaurant_id, delivery_fee, min_order, delivery_time, delivery_radius]
+    //   );
+    // }
+
+    // Step 6: Upsert operating hours
+    if (Array.isArray(operating_hours) && operating_hours.length > 0) {
       await pool.query("SELECT upsert_restaurant_hours($1, $2::jsonb)", [
         restaurant_id,
         JSON.stringify(operating_hours),
       ]);
     }
 
-    res.status(200).json({ message: "Profile updated successfully" });
+    res.status(200).json({
+      message: "Profile updated successfully",
+      image_url: imageUrl,
+    });
   } catch (err) {
-    console.log("Error in editProfile controller:", err.message);
-    res.status(500).json({ message: "Internal server error in editProfile" });
+    console.error("Error in editProfile:", err);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
 

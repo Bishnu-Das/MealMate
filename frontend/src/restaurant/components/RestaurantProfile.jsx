@@ -16,33 +16,6 @@ import { Clock, MapPin, Star, Camera, Upload } from "lucide-react";
 import axios from "axios";
 import { axiosInstance } from "../../../lib/axios";
 import toast from "react-hot-toast";
-//import { Toast } from "./ui/toast";
-
-// Example data from backend (replace with your actual fetch logic)
-// const backendData = {
-//   restaurant_name: "Mario's Kitchen",
-//   cuisine_type: "Italian, Pizza",
-//   description:
-//     "Authentic Italian cuisine with fresh ingredients and traditional recipes passed down through generations.",
-//   phone: "+1 (555) 123-4567",
-//   email: "mario@marioskitchen.com",
-//   address: "123 Italian Street, Food District, City 12345",
-//   delivery_settings: {
-//     delivery_fee: "$2.99",
-//     min_order: "$15.00",
-//     delivery_time: "30-45 min",
-//     delivery_radius: "5",
-//   },
-//   operating_hours: [
-//     { day_of_week: "monday", open_time: "10:00", close_time: "22:00" },
-//     { day_of_week: "tuesday", open_time: "10:00", close_time: "22:00" },
-//     { day_of_week: "wednesday", open_time: "10:00", close_time: "22:00" },
-//     { day_of_week: "thursday", open_time: "10:00", close_time: "22:00" },
-//     { day_of_week: "friday", open_time: "10:00", close_time: "22:00" },
-//     { day_of_week: "saturday", open_time: "10:00", close_time: "22:00" },
-//     // Sunday is closed
-//   ],
-// };
 
 function RestaurantProfile() {
   const days = [
@@ -77,6 +50,14 @@ function RestaurantProfile() {
       setMinOrder(data.delivery_settings?.min_order || "");
       setDeliveryTime(data.delivery_settings?.delivery_time || "");
       setDeliveryRadius(data.delivery_settings?.delivery_radius || "");
+      setCustomerRating(data.rating);
+
+      setImagePreview(
+        data.restaurant_image ||
+          "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=400&h=300&fit=crop"
+      );
+      setDescription(data.description);
+      setCuisineType(data.cuisine_type);
       // Map backend operating_hours to state for all days
       const backendHoursMap = {};
       (data.operating_hours || []).forEach((h) => {
@@ -119,34 +100,10 @@ function RestaurantProfile() {
   const [minOrder, setMinOrder] = React.useState("");
   const [deliveryTime, setDeliveryTime] = React.useState("");
   const [deliveryRadius, setDeliveryRadius] = React.useState("");
+  const [imageFile, setImageFile] = React.useState(null);
+  const [imagePreview, setImagePreview] = React.useState(null);
+  const [customerRating, setCustomerRating] = React.useState(null);
 
-  // Map backend operating_hours to state for all days
-  // const [operatingHours, setOperatingHours] = React.useState(() => {
-  //   // Create a lookup for backend days
-  //   const backendHoursMap = {};
-  //   backendData.operating_hours.forEach((h) => {
-  //     backendHoursMap[h.day_of_week] = h;
-  //   });
-  //   // Build state for all days
-  //   return days.map((day) => {
-  //     const key = day.toLowerCase();
-  //     if (backendHoursMap[key]) {
-  //       return {
-  //         day,
-  //         enabled: true,
-  //         open: backendHoursMap[key].open_time,
-  //         close: backendHoursMap[key].close_time,
-  //       };
-  //     } else {
-  //       return {
-  //         day,
-  //         enabled: false,
-  //         open: "10:00",
-  //         close: "22:00",
-  //       };
-  //     }
-  //   });
-  // });
   const [operatingHours, setOperatingHours] = React.useState(
     days.map((day) => ({
       day,
@@ -167,6 +124,12 @@ function RestaurantProfile() {
       hours.map((h, i) => (i === idx ? { ...h, [field]: value } : h))
     );
   };
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  };
 
   // Prepare data for backend
   const handleSave = async () => {
@@ -178,24 +141,30 @@ function RestaurantProfile() {
         close_time: h.close,
       }));
 
-    const data = {
-      restaurant_name: restaurantName,
-      cuisine_type: cuisineType,
-      description,
-      phone,
-      email,
-      address,
-      delivery_settings: {
-        delivery_fee: deliveryFee,
-        min_order: minOrder,
-        delivery_time: deliveryTime,
-        delivery_radius: deliveryRadius,
-      },
-      operating_hours: backendHours,
-    };
+    const formData = new FormData();
+    formData.append("restaurant_name", restaurantName);
+    formData.append("cuisine_type", cuisineType);
+    formData.append("description", description);
+    formData.append("phone", phone);
+    formData.append("email", email);
+    formData.append("address", address);
+    formData.append("delivery_fee", deliveryFee);
+    formData.append("min_order", minOrder);
+    formData.append("delivery_time", deliveryTime);
+    formData.append("delivery_radius", deliveryRadius);
+
+    // convert operating hours to JSON string (or handle it on backend)
+    formData.append("operating_hours", JSON.stringify(backendHours));
+    if (imageFile) {
+      formData.append("image", imageFile);
+    }
 
     try {
-      await axiosInstance.post("/restaurant/edit_profile", data);
+      await axiosInstance.post("/restaurant/edit_profile", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
       console.log("profile updated..");
       toast.success("Profile updated!", { duration: 3000 });
     } catch (err) {
@@ -384,6 +353,7 @@ function RestaurantProfile() {
         {/* Right Content */}
         <div className="space-y-6">
           {/* Restaurant Photo */}
+
           <Card className="bg-gray-800">
             <CardHeader>
               <CardTitle className="text-white">Restaurant Photo</CardTitle>
@@ -394,25 +364,17 @@ function RestaurantProfile() {
             <CardContent className="space-y-4">
               <div className="relative">
                 <img
-                  src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400&h=300&fit=crop"
+                  src={imagePreview}
                   alt="Restaurant"
                   className="w-full h-48 object-cover rounded-lg"
                 />
-                <Button
-                  size="sm"
-                  className="absolute bottom-2 right-2 bg-black/60 hover:bg-black/80 text-white"
-                >
-                  <Camera className="h-4 w-4 mr-1" />
-                  Change
-                </Button>
               </div>
-              <Button
-                variant="outline"
-                className="w-full border-gray-600 text-white"
-              >
-                <Upload className="h-4 w-4 mr-2" />
-                Upload New Photo
-              </Button>
+              <Input
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+                className="bg-gray-700 text-white file:cursor-pointer"
+              />
             </CardContent>
           </Card>
 
@@ -431,7 +393,7 @@ function RestaurantProfile() {
                   <span className="text-sm">Customer Rating</span>
                 </div>
                 <Badge className="bg-yellow-800 text-yellow-100">
-                  4.8 / 5.0
+                  {customerRating} / 5.0
                 </Badge>
               </div>
               <div className="flex items-center justify-between">

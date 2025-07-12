@@ -61,7 +61,13 @@ router.get(
   authorizeRoles(role),
   getRestaurantProfile
 );
-router.post("/edit_profile", authorization, authorizeRoles(role), editProfile);
+router.post(
+  "/edit_profile",
+  authorization,
+  authorizeRoles(role),
+  upload.single("image"),
+  editProfile
+);
 router.put(
   "/orders/:orderId/status",
   authorization,
