@@ -201,6 +201,7 @@ CREATE TABLE chat_messages (
 );
 
 -- FUNCTION to upsert restaurant hours
+
 CREATE OR REPLACE FUNCTION upsert_restaurant_hours(
     p_restaurant_id INT,
     p_hours JSONB
