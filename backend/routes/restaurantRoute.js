@@ -18,6 +18,8 @@ import {
   editProfile,
   updateOrderStatus,
   get_orders,
+  get_menu_categories,
+  change_menu_availability,
 } from "../controllers/restaurant.controller.js";
 
 const router = express.Router();
@@ -41,6 +43,12 @@ router.put(
   upload.single("image"),
   edit_menu
 );
+router.put(
+  "/change_availablity/:menu_item_id",
+  authorization,
+  authorizeRoles(role),
+  change_menu_availability
+);
 router.delete(
   "/delete_menu/:menu_item_id",
   authorization,
@@ -55,6 +63,12 @@ router.put(
   changePassword
 );
 router.get("/get_menu_items", authorization, authorizeRoles(role), get_menu);
+router.get(
+  "/get_menu_categories",
+  authorization,
+  authorizeRoles(role),
+  get_menu_categories
+);
 router.get(
   "/get_restaurant_profile",
   authorization,

@@ -13,24 +13,32 @@ import { Plus, Search, Edit, Trash2, Eye, EyeOff } from "lucide-react";
 import { AddMenuItemRest } from "./AddMenuItemRest";
 import EditMenuItemRest from "./EditMenuItemRest";
 import { restaurantAuthStore } from "../store/restaurantAuthStore";
+import { axiosInstance } from "../../../lib/axios";
 import toast from "react-hot-toast";
 
-const categories = ["All", "Pizza", "Burgers", "Pasta", "Salads"];
+// const categories = ["All", "Pizza", "Burgers", "Pasta", "Salads"];
 
 function MenuManagementRest() {
-  const { initialMenuItems, get_menus, delete_menu_item, edit_menu_item } =
-    restaurantAuthStore();
+  const {
+    initialMenuItems,
+    get_menus,
+    delete_menu_item,
+    edit_menu_item,
+    get_categories,
+  } = restaurantAuthStore();
   const [menuItems, setMenuItems] = useState(initialMenuItems);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
   const [currentView, setCurrentView] = useState("list");
   const [editingItem, setEditingItem] = useState(null);
+  const [categories, setCategories] = useState([]);
 
   useEffect(() => {
     const fetchMenus = async () => {
       try {
         //await get_menus();
         //setMenuItems(items);
+
         const items = await get_menus();
         setMenuItems(items);
       } catch (err) {
@@ -38,12 +46,21 @@ function MenuManagementRest() {
         setMenuItems([]);
       }
     };
+    const fetchCategories = async () => {
+      try {
+        const cat = await get_categories();
+        setCategories(cat);
+      } catch (err) {
+        setCategories([]);
+      }
+    };
     fetchMenus();
+    fetchCategories();
   }, [get_menus]);
 
   const filteredItems = menuItems.filter((item) => {
     const matchesCategory =
-      selectedCategory === "All" || item.category === selectedCategory;
+      selectedCategory === "All" || item.category_name === selectedCategory;
     const matchesSearch = item.name
       .toLowerCase()
       .includes(searchTerm.toLowerCase());
@@ -91,10 +108,16 @@ function MenuManagementRest() {
       ...item,
       is_available: !item.is_available,
     };
-    const items = await edit_menu_item(updatedItem, itemId);
-    if (item != false) {
-      setMenuItems(items);
-    }
+    await axiosInstance.put(
+      `/restaurant/change_availablity/${item.menu_item_id}`,
+      { status: !item.is_available }
+    );
+    const updated_items = await get_menus();
+    setMenuItems(updated_items);
+    //const items = await edit_menu_item(updatedItem, itemId);
+    // if (item != false) {
+    //   setMenuItems(items);
+    // }
   };
 
   if (currentView === "add") {

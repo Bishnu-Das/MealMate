@@ -12,6 +12,7 @@ import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
 import { ArrowLeft, Upload, Save } from "lucide-react";
 import { restaurantAuthStore } from "../store/restaurantAuthStore";
+import toast from "react-hot-toast";
 
 const categories = [
   "Pizza",
@@ -23,7 +24,7 @@ const categories = [
 ];
 
 export const AddMenuItemRest = ({ onBack, onSave }) => {
-  const { add_menu_item } = restaurantAuthStore();
+  const { add_menu_item, isChangingMenu } = restaurantAuthStore();
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -55,14 +56,33 @@ export const AddMenuItemRest = ({ onBack, onSave }) => {
       formPayload.append("image", imageFile);
     }
 
-    await add_menu_item(formPayload);
-    onBack();
+    const savedItem = await add_menu_item(formPayload);
+    if (savedItem) {
+      onSave(savedItem);
+      onBack();
+    } else {
+      toast.error("failed adding menu");
+    }
   };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
+
+  if (isChangingMenu) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-900 text-white">
+        <div className="text-center space-y-4">
+          <div className="w-12 h-12 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-lg font-semibold">Updating menu item...</p>
+          <p className="text-gray-400 text-sm">
+            Please wait while we save your changes.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6 text-white bg-gray-900 min-h-screen">

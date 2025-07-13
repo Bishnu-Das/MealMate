@@ -12,10 +12,10 @@ import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
 import { Badge } from "../components/ui/badge";
 import { Switch } from "../components/ui/switch";
-import { Clock, MapPin, Star, Camera, Upload } from "lucide-react";
-import axios from "axios";
+import { Clock, MapPin, Star } from "lucide-react";
 import { axiosInstance } from "../../../lib/axios";
 import toast from "react-hot-toast";
+import LocationPickerModal from "../../components/LocationPickerModal";
 
 function RestaurantProfile() {
   const days = [
@@ -39,18 +39,22 @@ function RestaurantProfile() {
   React.useEffect(() => {
     axiosInstance.get("/restaurant/get_restaurant_profile").then((res) => {
       const data = res.data;
-      console.log(data);
+      console.log("restaurnat profile: ", data);
       setRestaurantName(data.restaurant_name || "");
       setCuisineType(data.cuisine_type || "");
       setDescription(data.description || "");
       setPhone(data.phone || "");
       setEmail(data.email || "");
-      setAddress(data.address || "");
       setDeliveryFee(data.delivery_settings?.delivery_fee || "");
       setMinOrder(data.delivery_settings?.min_order || "");
       setDeliveryTime(data.delivery_settings?.delivery_time || "");
       setDeliveryRadius(data.delivery_settings?.delivery_radius || "");
       setCustomerRating(data.rating);
+      setAddress({
+        city: data.city,
+        street: data.street,
+        postal_code: data.postal_code,
+      });
 
       setImagePreview(
         data.restaurant_image ||
@@ -58,6 +62,13 @@ function RestaurantProfile() {
       );
       setDescription(data.description);
       setCuisineType(data.cuisine_type);
+
+      // Initialize location state from backend data
+      setLocation({
+        lat: data.latitude || null, // <-- Adjust keys if different
+        lng: data.longitude || null,
+      });
+
       // Map backend operating_hours to state for all days
       const backendHoursMap = {};
       (data.operating_hours || []).forEach((h) => {
@@ -65,7 +76,6 @@ function RestaurantProfile() {
           dayAbbrToFull[h.day_of_week] || h.day_of_week.toLowerCase();
         backendHoursMap[fullDay] = h;
       });
-      //console.log(backendHoursMap);
       setOperatingHours(
         days.map((day) => {
           const key = day.toLowerCase();
@@ -94,7 +104,11 @@ function RestaurantProfile() {
   const [description, setDescription] = React.useState("");
   const [phone, setPhone] = React.useState("");
   const [email, setEmail] = React.useState(""); // Email is not editable
-  const [address, setAddress] = React.useState("");
+  const [address, setAddress] = React.useState({
+    street: null,
+    city: null,
+    postal_code: null,
+  });
 
   const [deliveryFee, setDeliveryFee] = React.useState("");
   const [minOrder, setMinOrder] = React.useState("");
@@ -103,6 +117,11 @@ function RestaurantProfile() {
   const [imageFile, setImageFile] = React.useState(null);
   const [imagePreview, setImagePreview] = React.useState(null);
   const [customerRating, setCustomerRating] = React.useState(null);
+  const [locationModalOpen, setLocationModalOpen] = React.useState(false);
+  const [isUpdatingProfile, setIsUpdatingProfile] = React.useState(false);
+
+  // Location state with lat & lng
+  const [location, setLocation] = React.useState({ lat: null, lng: null });
 
   const [operatingHours, setOperatingHours] = React.useState(
     days.map((day) => ({
@@ -152,6 +171,9 @@ function RestaurantProfile() {
     formData.append("min_order", minOrder);
     formData.append("delivery_time", deliveryTime);
     formData.append("delivery_radius", deliveryRadius);
+    formData.append("street", address.street);
+    formData.append("city", address.city);
+    formData.append("postal_code", address.postal_code);
 
     // convert operating hours to JSON string (or handle it on backend)
     formData.append("operating_hours", JSON.stringify(backendHours));
@@ -159,7 +181,14 @@ function RestaurantProfile() {
       formData.append("image", imageFile);
     }
 
+    // Append location if set
+    if (location.lat !== null && location.lng !== null) {
+      formData.append("latitude", location.lat);
+      formData.append("longitude", location.lng);
+    }
+
     try {
+      setIsUpdatingProfile(true);
       await axiosInstance.post("/restaurant/edit_profile", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
@@ -169,8 +198,23 @@ function RestaurantProfile() {
       toast.success("Profile updated!", { duration: 3000 });
     } catch (err) {
       toast.error("Failed to update profile!", { duration: 3000 });
+    } finally {
+      setIsUpdatingProfile(false);
     }
   };
+  if (isUpdatingProfile) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-900 text-white">
+        <div className="text-center space-y-4">
+          <div className="w-12 h-12 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-lg font-semibold">Updating profile...</p>
+          <p className="text-gray-400 text-sm">
+            Please wait while updating your profile...
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6 bg-gray-900 text-white min-h-screen">
@@ -243,14 +287,85 @@ function RestaurantProfile() {
                   />
                 </div>
               </div>
+
               <div className="space-y-2">
                 <Label htmlFor="address">Address</Label>
-                <Input
-                  id="address"
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  className="bg-gray-700 text-white"
-                />
+                <div className="flex items-center space-x-2">
+                  <Input
+                    id="street"
+                    placeholder="street"
+                    value={address.street ?? ""}
+                    onChange={(e) =>
+                      setAddress((prev) => ({
+                        ...prev,
+                        street: e.target.value,
+                      }))
+                    }
+                    className="bg-gray-700 text-white flex-grow"
+                  />
+                  <Input
+                    id="city"
+                    placeholder="city"
+                    value={address.city ?? ""}
+                    onChange={(e) =>
+                      setAddress((prev) => ({
+                        ...prev,
+                        city: e.target.value,
+                      }))
+                    }
+                    className="bg-gray-700 text-white flex-grow"
+                  />
+                  <Input
+                    id="postal_code"
+                    placeholder="postal_code"
+                    value={address.postal_code ?? ""}
+                    onChange={(e) =>
+                      setAddress((prev) => ({
+                        ...prev,
+                        postal_code: e.target.value,
+                      }))
+                    }
+                    className="bg-gray-700 text-white flex-grow"
+                  />
+                </div>
+                {/* <div className="text-sm text-gray-300 mt-1">
+                  Selected Location: {location.lat ?? "-"} ,{" "}
+                  {location.lng ?? "-"}
+                </div> */}
+                <Label htmlFor="Location">Location coordinate</Label>
+                <div className="flex items-center-space-x-2">
+                  <Button
+                    type="button"
+                    onClick={() => setLocationModalOpen(true)}
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    Pick Location
+                  </Button>
+                  <Input
+                    id="longitude"
+                    value={location.lng ?? ""}
+                    placeholder="longitude"
+                    onChange={(e) =>
+                      setLocation((prev) => ({
+                        ...prev,
+                        lng: parseFloat(e.target.value),
+                      }))
+                    }
+                    className="bg-gray-700 text-white"
+                  />
+                  <Input
+                    id="latitude"
+                    value={location.lat ?? ""}
+                    placeholder="latitude"
+                    onChange={(e) =>
+                      setLocation((prev) => ({
+                        ...prev,
+                        lat: parseFloat(e.target.value),
+                      }))
+                    }
+                    className="bg-gray-700 text-white"
+                  />
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -447,6 +562,13 @@ function RestaurantProfile() {
           Save Changes
         </Button>
       </div>
+
+      <LocationPickerModal
+        isOpen={locationModalOpen}
+        onClose={() => setLocationModalOpen(false)}
+        onSelect={(coords) => setLocation(coords)}
+        initialLocation={location}
+      />
     </div>
   );
 }

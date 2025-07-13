@@ -307,10 +307,10 @@ function OrderManagement() {
       </div>
 
       <Tabs defaultValue="all" className="w-full">
-        <TabsList className="grid w-full grid-cols-7 bg-gray-800 border border-gray-700">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-2 bg-gray-800 border border-gray-700 p-2">
           {[
             "all",
-            "pending_restaurant_acceptance",
+            "pending_acceptance",
             "preparing",
             "ready_for_pickup",
             "out_for_delivery",
@@ -320,7 +320,7 @@ function OrderManagement() {
             <TabsTrigger
               key={tab}
               value={tab}
-              className="text-white data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-indigo-600"
+              className="text-white data-[state=active]:bg-gradient-to-r text-center data-[state=active]:from-purple-600 data-[state=active]:to-indigo-600"
             >
               {tab === "all"
                 ? "All Orders"

@@ -204,6 +204,10 @@ CREATE TABLE chat_messages (
   status message_status DEFAULT 'sent'
 );
 
+--changes
+ALTER TABLE menu_categories
+ADD CONSTRAINT category_name_not_empty CHECK (trim(name) <> '');
+
 -- FUNCTION to upsert restaurant hours
 
 CREATE OR REPLACE FUNCTION upsert_restaurant_hours(
@@ -264,6 +268,22 @@ BEGIN
 END;
 $$
 LANGUAGE plpgsql;
+
+CREATE TABLE archived_menu_items AS TABLE menu_items WITH NO DATA;
+
+CREATE OR REPLACE FUNCTION archive_deleted_menu_item()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO archived_menu_items SELECT OLD.*;
+  RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER archive_menu_item_trigger
+BEFORE DELETE ON menu_items
+FOR EACH ROW
+EXECUTE FUNCTION archive_deleted_menu_item();
+
 
 
 

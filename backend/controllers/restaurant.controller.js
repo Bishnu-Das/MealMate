@@ -133,6 +133,10 @@ export const add_menu = async (req, res) => {
   const { category, name, description, price, is_available, discount } =
     req.body;
 
+  if (!category || category.trim() === "") {
+    return res.status(400).json({ message: "Category name is required" });
+  }
+  //console.log(req.body);
   try {
     let imageUrl = null;
     if (req.file) {
@@ -155,7 +159,7 @@ export const add_menu = async (req, res) => {
     if (categoryResult.rows.length === 0) {
       categoryResult = await pool.query(
         `INSERT INTO menu_categories (restaurant_id, name) VALUES($1, $2) RETURNING *`,
-        [id, category]
+        [id, category.trim()]
       );
     }
 
@@ -179,9 +183,13 @@ export const add_menu = async (req, res) => {
       ]
     );
     if (newItem.rows.length > 0) {
+      const item2 = await pool.query(
+        "SELECT M.MENU_ITEM_ID,M.CATEGORY_ID,M.NAME,M.DESCRIPTION,M.PRICE,M.IS_AVAILABLE,M.MENU_ITEM_IMAGE_URL,M.DISCOUNT,C.NAME AS CATEGORY_NAME,C.MENU_CATEGORY_IMAGE_URL AS CATEGORY_IMAGE FROM MENU_ITEMS M JOIN MENU_CATEGORIES C ON (M.CATEGORY_ID = C.CATEGORY_ID) WHERE M.menu_item_id = $1",
+        [newItem.rows[0].menu_item_id]
+      );
       res.status(201).json({
         message: "Menu item added successfully",
-        item: newItem.rows[0],
+        item: item2.rows[0],
       });
     } else {
       res.status(400).json({ message: "Menu item not added" });
@@ -206,7 +214,9 @@ export const edit_menu = async (req, res) => {
     menu_item_image_url, // this is for fallback if no new image
   } = req.body;
 
-  //console.log(req.body);
+  if (!category || category.trim() === "") {
+    return res.status(400).json({ message: "Category name is required" });
+  }
 
   try {
     // Step 1: Check if the menu item exists and belongs to this restaurant
@@ -301,6 +311,41 @@ export const edit_menu = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
+export const change_menu_availability = async (req, res) => {
+  const restaurant_id = req.user.id;
+  const menu_item_id = req.params.menu_item_id;
+  const { status } = req.body;
+
+  try {
+    // Make sure this item belongs to the authenticated restaurant
+    const itemCheck = await pool.query(
+      `SELECT mi.* FROM menu_items mi
+       JOIN menu_categories mc ON mi.category_id = mc.category_id
+       WHERE mi.menu_item_id = $1 AND mc.restaurant_id = $2`,
+      [menu_item_id, restaurant_id]
+    );
+
+    if (itemCheck.rows.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "Menu item not found or unauthorized" });
+    }
+
+    // Update availability status
+    const updateRes = await pool.query(
+      `UPDATE menu_items SET is_available = $1 WHERE menu_item_id = $2 RETURNING *`,
+      [status, menu_item_id]
+    );
+
+    return res.status(200).json({
+      message: "Menu item availability updated",
+      updatedItem: updateRes.rows[0],
+    });
+  } catch (err) {
+    console.error("Error in change_menu_availability:", err.message);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
 
 export const delete_menu = async (req, res) => {
   const restaurant_id = req.user.id;
@@ -361,6 +406,23 @@ export const get_menu = async (req, res) => {
     res.status(500).json({ message: "internal server error" });
   }
 };
+export const get_menu_categories = async (req, res) => {
+  const restaurant_id = req.user.id;
+  try {
+    const result = await pool.query(
+      "SELECT name FROM menu_categories WHERE restaurant_id = $1",
+      [restaurant_id]
+    );
+
+    // Extract names into a flat array
+    const categoryNames = result.rows.map((row) => row.name);
+    categoryNames.unshift("All");
+    res.json(categoryNames);
+  } catch (err) {
+    console.error("Error in get_categories:", err.message);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
 
 export const changePassword = async (req, res) => {
   const id = req.user.id;
@@ -410,9 +472,11 @@ export const getRestaurantProfile = async (req, res) => {
       r.email,
       l.street,
       l.city,
-      l.postal_code
+      l.postal_code,
+      l.longitude,
+      l.latitude
     FROM restaurants r
-    LEFT JOIN user_locations l ON r.location_id = l.location_id
+    LEFT JOIN user_locations l ON r.restaurant_id = l.restaurant_id
     WHERE r.restaurant_id = $1
   `;
   const restaurantRes = await pool.query(restaurantQuery, [restaurant_id]);
@@ -420,7 +484,7 @@ export const getRestaurantProfile = async (req, res) => {
   const r = restaurantRes.rows[0];
 
   // 2. Compose address string
-  const address = [r.street, r.city, r.postal_code].filter(Boolean).join(", ");
+  //const address = [r.street, r.city, r.postal_code].filter(Boolean).join(", ");
 
   // 3. Get operating hours
   const hoursQuery = `
@@ -447,7 +511,11 @@ export const getRestaurantProfile = async (req, res) => {
     // cuisine_type and description are not in your schema, so omit them
     phone: r.phone,
     email: r.email,
-    address: r.street + "," + r.city + "," + r.postal_code,
+    street: r.street,
+    city: r.city,
+    postal_code: r.postal_code,
+    latitude: r.latitude,
+    longitude: r.longitude,
     // delivery_settings is not in your schema, so omit or set as empty/default
     restaurant_image: r.image_url,
     rating: r.rating,
@@ -476,7 +544,6 @@ export const editProfile = async (req, res) => {
   const {
     restaurant_name,
     phone,
-    address,
     email,
     cuisine_type,
     description,
@@ -485,10 +552,12 @@ export const editProfile = async (req, res) => {
     delivery_time,
     delivery_radius,
     operating_hours: operatingHoursRaw,
+    latitude,
+    longitude,
+    street,
+    city,
+    postal_code,
   } = req.body;
-
-  console.log("Received fields:", req.body);
-  console.log("Received file:", req.file);
 
   let operating_hours = [];
   try {
@@ -547,11 +616,7 @@ export const editProfile = async (req, res) => {
     );
 
     // Step 4: Update address (user_locations table)
-    if (address) {
-      const [street = "", city = "", postal_code = ""] = address
-        .split(",")
-        .map((s) => s.trim());
-
+    if (street || city || postal_code || latitude || longitude) {
       const locRes = await pool.query(
         "SELECT location_id FROM user_locations WHERE restaurant_id = $1",
         [restaurant_id]
@@ -560,13 +625,13 @@ export const editProfile = async (req, res) => {
       if (locRes.rows.length > 0) {
         const location_id = locRes.rows[0].location_id;
         await pool.query(
-          "UPDATE user_locations SET street = $1, city = $2, postal_code = $3 WHERE location_id = $4",
-          [street, city, postal_code, location_id]
+          "UPDATE user_locations SET street = $1, city = $2, postal_code = $3, latitude=$4, longitude=$5 WHERE location_id = $6",
+          [street, city, postal_code, latitude, longitude, location_id]
         );
       } else {
         await pool.query(
-          "INSERT INTO user_locations (restaurant_id, street, city, postal_code) VALUES ($1, $2, $3, $4)",
-          [restaurant_id, street, city, postal_code]
+          "INSERT INTO user_locations (restaurant_id, street, city, postal_code,latitude,longitude) VALUES ($1, $2, $3, $4,$5,$6)",
+          [restaurant_id, street, city, postal_code, latitude, longitude]
         );
       }
     }
