@@ -40,6 +40,7 @@ const HeaderRest = ({ onLogout }) => {
       socketService.on("order_status_updated", (updatedOrder) => {
         // Remove notification if the order was rejected or accepted
         // We don't remove from global state here, as it's handled by clearNotifications
+
       });
 
       socketService.on("order_accepted", ({ orderId, riderProfile }) => {

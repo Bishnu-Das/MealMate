@@ -4,13 +4,13 @@ dotenv.config();
 
 const authorization = async (req, res, next) => {
   try {
-    const jwtToken = req.cookies?.jwt;
+    const token = req.header("Authorization")?.replace("Bearer ", "") || req.cookies?.jwt;
     //console.log("jwtToken", jwtToken);
 
-    if (!jwtToken) {
+    if (!token) {
       return res.status(403).json("not athorize. no token provided");
     }
-    const payload = jwt.verify(jwtToken, process.env.JWT_SECRET);
+    const payload = jwt.verify(token, process.env.JWT_SECRET);
     req.user = payload.user || payload;
     //console.log(req.user);
 

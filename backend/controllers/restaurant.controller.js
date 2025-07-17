@@ -504,12 +504,16 @@ export const updateOrderStatus = async (req, res) => {
     getIO().to(`restaurant_${order.restaurant_id}`).emit('order_status_updated', order);
 
     if (status === 'ready_for_pickup') {
+        
         await client.query(
-            'UPDATE deliveries SET status = \'pending\' WHERE order_id = $1',
+            `UPDATE deliveries SET status = 'pending' WHERE order_id = $1`,
             [orderId]
         );
-      // Emit new delivery event to all riders
-      getIO().to('riders').emit('new_delivery', order);
+        
+
+        // Emit new delivery event to all riders
+        const io = getIO();
+        io.to('riders').emit('new_delivery', order);
     }
 
     await client.query('COMMIT');

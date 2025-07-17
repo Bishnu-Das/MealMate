@@ -16,7 +16,7 @@ export const userAuthStore = create((set, get) => ({
   checkAuth: async () => {
     try {
       const res = await axiosInstance.get("/customer/is-varify");
-      set({ authUser: res.data });
+      set({ authUser: { ...res.data, role: 'customer' } });
     } catch (err) {
       console.log("Error in checkAuth", err);
     } finally {
@@ -28,7 +28,7 @@ export const userAuthStore = create((set, get) => ({
     set({ isLoggingIn: true });
     try {
       const res = await axiosInstance.post("/customer/login", data);
-      set({ authUser: res.data });
+      set({ authUser: { ...res.data, role: 'customer' } });
       toast.success("Logged in successfully");
     } catch (err) {
       toast.error(err.response.data.message);
@@ -40,7 +40,7 @@ export const userAuthStore = create((set, get) => ({
     set({ isSigningUp: true });
     try {
       const res = await axiosInstance.post("/customer/register", data);
-      set({ authUser: res.data });
+      set({ authUser: { ...res.data, role: 'customer' } });
       toast.success("Signed up successfully");
     } catch (err) {
       toast.error(err.response.data.message);

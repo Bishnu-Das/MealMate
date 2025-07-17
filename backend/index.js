@@ -1,5 +1,6 @@
 import express from "express";
 import dotenv from "dotenv";
+import SSLCommerzPayment from 'sslcommerz-lts';
 import cors from "cors";
 import http from "http"; // Import http module
 import { initSocket, getIO } from "./socket.js"; // Import initSocket and getIO
@@ -12,8 +13,9 @@ import menuRoutes from "./menu-management/menuRoutes.js"; // Import the menu rou
 import cookieParser from "cookie-parser";
 import riderAuthRoute from "./routes/riderAuthRoute.js"
 import customerOrderRoutes from "./customer/order/orderRoutes.js";
-import customerPaymentRoutes from "./customer/order/paymentRoutes.js";
+import createCustomerPaymentRoutes from "./customer/payment/paymentRoutes.js";
 import reviewRoutes from "./review_rating/reviewRoutes.js";
+import chatRoutes from "./chats/chatRoutes.js";
 
 dotenv.config();
 
@@ -49,9 +51,20 @@ app.use("/api/menu", menuRoutes); // Register the menu routes
 console.log("Registering customer order routes...");
 app.use("/api/customer/order", customerOrderRoutes);
 console.log("Registering customer payment routes...");
+const store_id = process.env.SSL_COMMERZ_STORE_ID;
+const store_passwd = process.env.SSL_COMMERZ_STORE_PASSWORD;
+console.log('Loaded SSLCommerz Store ID:', store_id);
+console.log('Loaded SSLCommerz Store Password:', store_passwd);
+if (!store_id || !store_passwd) {
+  console.error('ERROR: SSLCommerz store_id or store_passwd is missing. Check your .env file.');
+  process.exit(1);
+}
+const customerPaymentRoutes = createCustomerPaymentRoutes(store_id, store_passwd);
 app.use("/api/customer/payment", customerPaymentRoutes);
 console.log("Registering review routes...");
 app.use("/api/customer/review", reviewRoutes);
+app.use("/api/chat", chatRoutes);
+app.use("/api/chat", chatRoutes);
 
 const PORT = process.env.PORT || 5001;
 server.listen(PORT, () => {

@@ -11,7 +11,12 @@ export const useRiderAuthStore = create((set) => ({
   checkAuthRider: async () => {
     try {
       const res = await axiosInstance.get("/rider/is-verify");
-      set({ authrider: res.data });
+      set((state) => {
+        if (JSON.stringify(state.authrider) !== JSON.stringify({ ...res.data, role: 'rider' })) {
+          return { authrider: { ...res.data, role: 'rider' } };
+        }
+        return {};
+      });
     } catch (err) {
       console.log("Error in checkAuthRider", err);
     } finally {
