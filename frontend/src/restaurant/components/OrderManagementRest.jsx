@@ -306,51 +306,55 @@ function OrderManagement() {
         <p className="text-gray-400">Track and manage incoming orders</p>
       </div>
 
-      <Tabs defaultValue="all" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-2 bg-gray-800 border border-gray-700 p-2">
+      <div className="justify-center p-6">
+        <Tabs defaultValue="all" className="w-full">
+          <div className="container">
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-2 bg-gray-800 border border-gray-700 p-2 justify-center">
+              {[
+                "all",
+                "pending_acceptance",
+                "preparing",
+                "ready_for_pickup",
+                "out_for_delivery",
+                "delivered",
+                "restaurant_rejected",
+              ].map((tab) => (
+                <TabsTrigger
+                  key={tab}
+                  value={tab}
+                  className="text-white data-[state=active]:bg-gradient-to-r text-center data-[state=active]:from-purple-600 data-[state=active]:to-indigo-600 justify-wrap"
+                >
+                  {tab === "all"
+                    ? "All Orders"
+                    : tab.replace(/_/g, " ").charAt(0).toUpperCase() +
+                      tab.replace(/_/g, " ").slice(1)}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </div>
+
           {[
             "all",
-            "pending_acceptance",
+            "pending_restaurant_acceptance",
             "preparing",
             "ready_for_pickup",
             "out_for_delivery",
             "delivered",
             "restaurant_rejected",
           ].map((tab) => (
-            <TabsTrigger
-              key={tab}
-              value={tab}
-              className="text-white data-[state=active]:bg-gradient-to-r text-center data-[state=active]:from-purple-600 data-[state=active]:to-indigo-600"
-            >
-              {tab === "all"
-                ? "All Orders"
-                : tab.replace(/_/g, " ").charAt(0).toUpperCase() +
-                  tab.replace(/_/g, " ").slice(1)}
-            </TabsTrigger>
+            <TabsContent key={tab} value={tab} className="space-y-4">
+              {filterOrdersByStatus(tab).map((order) => (
+                <OrderCard
+                  key={order.order_id}
+                  order={order}
+                  onUpdateStatus={updateOrderStatus}
+                  onRejectOrder={rejectOrder}
+                />
+              ))}
+            </TabsContent>
           ))}
-        </TabsList>
-
-        {[
-          "all",
-          "pending_restaurant_acceptance",
-          "preparing",
-          "ready_for_pickup",
-          "out_for_delivery",
-          "delivered",
-          "restaurant_rejected",
-        ].map((tab) => (
-          <TabsContent key={tab} value={tab} className="space-y-4">
-            {filterOrdersByStatus(tab).map((order) => (
-              <OrderCard
-                key={order.order_id}
-                order={order}
-                onUpdateStatus={updateOrderStatus}
-                onRejectOrder={rejectOrder}
-              />
-            ))}
-          </TabsContent>
-        ))}
-      </Tabs>
+        </Tabs>
+      </div>
     </div>
   );
 }

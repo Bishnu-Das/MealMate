@@ -160,7 +160,7 @@ const LoginPage = () => {
           <div className="lg:max-w-md mx-auto w-full">
             <Card className="shadow-2xl border border-gray-800 bg-gray-900">
               <CardHeader className="text-center space-y-1">
-                <CardTitle className="text-2xl font-bold">
+                <CardTitle className="text-2xl font-bold text-cyan-600">
                   Welcome Back
                 </CardTitle>
                 <CardDescription className="text-gray-400">
@@ -170,8 +170,18 @@ const LoginPage = () => {
               <CardContent>
                 <Tabs defaultValue="login" className="w-full">
                   <TabsList className="grid w-full grid-cols-2 bg-gray-800">
-                    <TabsTrigger value="login">Sign In</TabsTrigger>
-                    <TabsTrigger value="signup">Sign Up</TabsTrigger>
+                    <TabsTrigger
+                      value="login"
+                      className="text-purple-400 data-[state=active]:bg-gray-700 data-[state=active]:text-white rounded-t-md"
+                    >
+                      Sign In
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value="signup"
+                      className="text-purple-400 data-[state=active]:bg-gray-700 data-[state=active]:text-white rounded-t-md"
+                    >
+                      Sign Up
+                    </TabsTrigger>
                   </TabsList>
 
                   <TabsContent value="login" className="space-y-4 mt-6">
