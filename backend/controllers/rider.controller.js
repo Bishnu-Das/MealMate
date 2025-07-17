@@ -129,7 +129,30 @@ export const logout = async (req, res) => {
 
 export const varify = async (req, res) => {
   try {
-    res.json(true);
+    const userId = req.user.id;
+    const rider = await pool.query(
+      "SELECT user_id, name, email, phone_number FROM users WHERE user_id = $1 AND role_id = 'rider'",
+      [userId]
+    );
+
+    if (rider.rows.length === 0) {
+      return res.status(404).json({ message: "Rider not found." });
+    }
+
+    const profile = await pool.query(
+      "SELECT vehicle_type, current_location, is_available FROM rider_profiles WHERE user_id = $1",
+      [userId]
+    );
+
+    res.status(200).json({
+      user_id: rider.rows[0].user_id,
+      name: rider.rows[0].name,
+      email: rider.rows[0].email,
+      phone_number: rider.rows[0].phone_number,
+      vehicle_type: profile.rows[0]?.vehicle_type,
+      current_location: profile.rows[0]?.current_location,
+      is_available: profile.rows[0]?.is_available,
+    });
   } catch (err) {
     console.error(err.message);
     res.status(500).json({ message: "internal server error" });

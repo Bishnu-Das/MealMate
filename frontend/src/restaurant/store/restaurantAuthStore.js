@@ -16,7 +16,7 @@ export const restaurantAuthStore = create((set, get) => ({
   checkAuthRestaurant: async () => {
     try {
       const res = await axiosInstance.get("/restaurant/is-varify");
-      set({ authRestaurant: res.data });
+      set({ authRestaurant: { ...res.data, role: 'restaurant' } });
     } catch (err) {
       console.log("Error in checkAuth", err);
     } finally {
@@ -27,7 +27,7 @@ export const restaurantAuthStore = create((set, get) => ({
     set({ isLoggingIn: true });
     try {
       const res = await axiosInstance.post("/restaurant/login", data);
-      set({ authRestaurant: res.data });
+      set({ authRestaurant: { ...res.data, role: 'restaurant' } });
       toast.success("Logged in successfully");
       //console.log(authRestaurant);
       //console.log(res.data);
@@ -42,7 +42,7 @@ export const restaurantAuthStore = create((set, get) => ({
     set({ isSigningUp: true });
     try {
       const res = await axiosInstance.post("/restaurant/register", data);
-      set({ authRestaurant: res.data });
+      set({ authRestaurant: { ...res.data, role: 'restaurant' } });
       toast.success("Signed up successfully");
     } catch (err) {
       toast.error(err?.response?.data?.message || "Signup failed");

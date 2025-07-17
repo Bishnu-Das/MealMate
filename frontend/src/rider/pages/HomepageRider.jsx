@@ -18,6 +18,7 @@ import {
   Bell,
   MessageCircle,
 } from "lucide-react";
+import ChatModal from "../../Components/ChatModal";
 import { axiosInstance } from "../../../lib/axios";
 import toast from "react-hot-toast";
 import socketService from "../../services/socketService";
@@ -30,13 +31,18 @@ const HomepageRider = () => {
   const [isAvailable, setIsAvailable] = useState(true);
   const [showNotifications, setShowNotifications] = useState(false);
   const notificationRef = useRef();
+  const [isChatModalOpen, setIsChatModalOpen] = useState(false);
 
-  const { authrider, logout } = useRiderAuthStore();
+  const { authrider, logout, checkAuthRider } = useRiderAuthStore();
   const {
     notifications: globalNotifications,
     addNotification,
     clearNotifications,
   } = useNotificationStore();
+
+  useEffect(() => {
+    checkAuthRider(); // Call checkAuthRider once on component mount
+  }, []); // Empty dependency array to run only once
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -54,21 +60,18 @@ const HomepageRider = () => {
 
     if (authrider) {
       fetchDashboardData();
-      console.log("Dashboard data:", dashboardData);
+      socketService.joinRoom("riders");
 
-      socketService.connect("riders"); // Connect as a rider
-
-      socketService.on("new_delivery", (newOrder) => {
-        console.log("New delivery received:", newOrder);
+      const handleNewDelivery = (newOrder) => {
         toast.success(`New order #${newOrder.order_id} available!`);
         addNotification(newOrder);
         setDashboardData((prevData) => ({
           ...prevData,
           availableOrders: [newOrder, ...(prevData?.availableOrders || [])],
         }));
-      });
+      };
 
-      socketService.on("order_accepted", ({ orderId, riderProfile }) => {
+      const handleOrderAccepted = ({ orderId, riderProfile }) => {
         console.log(`Order ${orderId} accepted by rider:`, riderProfile);
         // Remove the accepted order from available orders if it was accepted by another rider
         setDashboardData((prevData) => ({
@@ -77,9 +80,19 @@ const HomepageRider = () => {
             (order) => order.order_id !== orderId
           ),
         }));
-      });
-    }
+      };
 
+      socketService.on("new_delivery", handleNewDelivery);
+      socketService.on("order_accepted", handleOrderAccepted);
+
+      return () => {
+        socketService.off("new_delivery", handleNewDelivery);
+        socketService.off("order_accepted", handleOrderAccepted);
+      };
+    }
+  }, [authrider]); // Only re-run when authrider changes
+
+  useEffect(() => {
     function handleClickOutside(event) {
       if (
         notificationRef.current &&
@@ -97,10 +110,8 @@ const HomepageRider = () => {
 
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
-      socketService.off("new_delivery");
-      socketService.off("order_accepted");
     };
-  }, [authrider, showNotifications]); // Added authrider to dependency array
+  }, [showNotifications]);
 
   const handleAvailabilityToggle = async () => {
     try {
@@ -119,44 +130,15 @@ const HomepageRider = () => {
   };
 
   const handleUpdateOrderStatus = async (orderId, newStatus) => {
-    console.log("handleUpdateOrderStatus called");
     try {
-      // Optimistically update the UI
-      setDashboardData((prevData) => {
-        if (!prevData || !prevData.assignedOrder) return prevData;
-        const updatedAssignedOrder = {
-          ...prevData.assignedOrder,
-          order_status: newStatus,
-        };
-        const newDashboardData = {
-          ...prevData,
-          assignedOrder: updatedAssignedOrder,
-        };
-        console.log("Optimistically updated dashboardData:", newDashboardData);
-        return newDashboardData;
-      });
-
       await axiosInstance.put(`/rider/data/orders/${orderId}/status`, {
         status: newStatus,
       });
-      toast.success(`Order ${orderId} status updated to ${newStatus}`);
-
-      // Re-fetch dashboard data in the background to ensure full consistency
-      const res = await axiosInstance.get("/rider/data/dashboard");
-      console.log("Refetched dashboardData after update:", res.data);
-      setDashboardData(res.data);
-      setIsAvailable(res.data.isAvailable);
     } catch (err) {
       console.error("Error updating order status:", err);
       toast.error(
         err?.response?.data?.message || "Failed to update order status."
       );
-      // If update fails, re-fetch to revert optimistic update
-      setLoading(true); // Temporarily show loading while re-fetching to revert
-      const res = await axiosInstance.get("/rider/data/dashboard");
-      setDashboardData(res.data);
-      setIsAvailable(res.data.isAvailable);
-      setLoading(false);
     }
   };
 
@@ -178,6 +160,11 @@ const HomepageRider = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
       <Navbar />
+      <ChatModal
+        isOpen={isChatModalOpen}
+        onClose={() => setIsChatModalOpen(false)}
+        currentAuthUser={authrider}
+      />
       <div className="container mx-auto px-4 py-8">
         {/* Header Section */}
         <div className="bg-white rounded-2xl shadow-lg border border-blue-100 p-8 mb-8">
@@ -486,60 +473,21 @@ const HomepageRider = () => {
                     <button
                       className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center"
                       onClick={async () => {
-                        console.log("Accept Order button clicked");
                         try {
                           await axiosInstance.put(
                             `/rider/data/orders/${order.order_id}/accept`
                           );
-                          toast.success("Order accepted!");
-                          // Optimistically update dashboard data to reflect accepted order
-                          setDashboardData((prevData) => {
-                            const updatedAvailableOrders =
-                              prevData.availableOrders.filter(
-                                (o) => o.order_id !== order.order_id
-                              );
-                            const newAssignedOrder = {
-                              ...order, // Use the order from availableOrders
-                              order_status: "out_for_delivery", // Set initial status
-                            };
-                            const newDashboardData = {
-                              ...prevData,
-                              availableOrders: updatedAvailableOrders,
-                              assignedOrder: newAssignedOrder,
-                            };
-                            console.log(
-                              "Optimistically updated dashboardData after accept:",
-                              newDashboardData
-                            );
-                            return newDashboardData;
-                          });
                           clearNotifications(); // Clear all notifications after accepting one
-                          // Re-fetch dashboard data in the background for consistency
-                          setLoading(true); // Show loading briefly while re-fetching
-                          const res = await axiosInstance.get(
-                            "/rider/data/dashboard"
-                          );
-                          console.log(
-                            "Refetched dashboardData after accept:",
-                            res.data
-                          );
-                          setDashboardData(res.data);
-                          setIsAvailable(res.data.isAvailable);
-                          setLoading(false);
+                          setShowNotifications(false); // Close notifications after accepting
                         } catch (err) {
-                          console.error("Error accepting order:", err);
+                          console.error(
+                            "Error accepting order from notification:",
+                            err
+                          );
                           toast.error(
                             err?.response?.data?.message ||
                               "Failed to accept order."
                           );
-                          // If accept fails, re-fetch to revert optimistic update
-                          setLoading(true); // Show loading briefly while re-fetching
-                          const res = await axiosInstance.get(
-                            "/rider/data/dashboard"
-                          );
-                          setDashboardData(res.data);
-                          setIsAvailable(res.data.isAvailable);
-                          setLoading(false);
                         }
                       }}
                     >
@@ -573,13 +521,13 @@ const HomepageRider = () => {
 
         {/* Action Buttons */}
         <div className="flex flex-wrap gap-4 justify-center">
-          <Link
-            to="/rider/chats"
+          <button
+            onClick={() => setIsChatModalOpen(true)}
             className="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 flex items-center"
           >
             <MessageCircle className="size-5 mr-2" />
             Chats
-          </Link>
+          </button>
           <Link
             to="/rider/history"
             className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 flex items-center"

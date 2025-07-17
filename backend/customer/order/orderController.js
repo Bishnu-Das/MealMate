@@ -1,5 +1,5 @@
 import pool from '../../db.js';
-import { io } from '../../index.js';
+import { getIO } from '../../socket.js';
 
 // This is the new reusable function for creating orders.
 // It's designed to be called from different parts of the application (e.g., COD checkout, payment confirmation).
@@ -73,6 +73,7 @@ export const createOrder = async (req, res) => {
         [order.order_id, userId, 'cod', order.total_amount, 'pending']
       );
       // Emit a new order event to the restaurant
+      const io = getIO();
       io.to(`restaurant_${order.restaurant_id}`).emit('new_order', order);
     }
 

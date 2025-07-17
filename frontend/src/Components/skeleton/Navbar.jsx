@@ -73,9 +73,7 @@ const Navbar = () => {
           <li>
             <Link to="/restaurants">Restaurants</Link>
           </li>
-          <li>
-            <Link to="/offers">Offers</Link>
-          </li>
+          
           
           {authUser && (
             <li>
@@ -107,11 +105,7 @@ const Navbar = () => {
               Restaurants
             </Link>
           </li>
-          <li>
-            <Link to="/offers" onClick={() => setMobileMenuOpen(false)}>
-              Offers
-            </Link>
-          </li>
+          
           
 
           {authUser && (

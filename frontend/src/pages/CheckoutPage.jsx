@@ -4,12 +4,15 @@ import { Button } from '../restaurant/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '../restaurant/components/ui/radio-group';
 import { Label } from '../restaurant/components/ui/label';
 import { axiosInstance } from '../../lib/axios';
-import { toast } from 'sonner';
+import { toast } from '../hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 
+import { userAuthStore } from '../store/userAuthStore';
+
 const CheckoutPage = () => {
   const { cartItems, clearCart } = useCartStore();
+  const { authUser } = userAuthStore();
   const [paymentMethod, setPaymentMethod] = useState('cod');
   const navigate = useNavigate();
 
@@ -37,26 +40,53 @@ const CheckoutPage = () => {
   const grandTotal = totalItemsSubtotal + totalDeliveryFee;
 
   const handlePlaceOrder = async () => {
+    if (!authUser) {
+      toast.error("Please log in to place an order.");
+      return;
+    }
+
+    // Generate a unique transaction ID for this order
+    const tran_id = `FOODPANDA_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+
+    // Prepare customer information
+    const customerInfo = {
+      name: authUser.name || 'Guest User',
+      email: authUser.email || 'guest@example.com',
+      address: authUser.address || 'N/A', // Assuming address might be in authUser
+      phone: authUser.phone_number || 'N/A',
+    };
     if (paymentMethod === 'cod') {
       try {
         await axiosInstance.post('/customer/order/create', { cartItems });
-        toast.success('Orders placed successfully!');
+        toast({
+          title: 'Orders placed successfully!',
+          variant: 'success'
+        });
         clearCart();
         setTimeout(() => {
           navigate('/order-history');
         }, 500); // Delay navigation by 500ms to allow toast to show
       } catch (error) {
-        toast.error('Failed to place one or more orders.');
+        toast({
+          title: 'Failed to place one or more orders.',
+          variant: 'destructive'
+        });
       }
     } else {
       try {
         const { data } = await axiosInstance.post('/customer/payment/initiate', {
           cartItems,
+          customerInfo,
+          total_amount: grandTotal,
+          tran_id,
           paymentMethod,
         });
         window.location.href = data.paymentUrl;
       } catch (error) {
-        toast.error('Failed to initiate payment.');
+        toast({
+          title: 'Failed to initiate payment.',
+          variant: 'destructive'
+        });
       }
     }
   };
@@ -133,12 +163,8 @@ const CheckoutPage = () => {
                 <span>Cash on Delivery</span>
               </Label>
               <Label className="flex items-center space-x-3 p-3 border rounded-lg text-gray-800 bg-white hover:bg-pink-50 cursor-pointer has-[:checked]:bg-pink-50 has-[:checked]:border-pink-500">
-                <RadioGroupItem value="bkash" id="bkash" />
-                <span>bKash</span>
-              </Label>
-              <Label className="flex items-center space-x-3 p-3 border rounded-lg text-gray-800 bg-white hover:bg-pink-50 cursor-pointer has-[:checked]:bg-pink-50 has-[:checked]:border-pink-500">
-                <RadioGroupItem value="nagad" id="nagad" />
-                <span>Nagad</span>
+                <RadioGroupItem value="sslcommerz" id="sslcommerz" />
+                <span>Pay with SSLCommerz</span>
               </Label>
             </RadioGroup>
 

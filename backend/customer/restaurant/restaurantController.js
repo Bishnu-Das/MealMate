@@ -104,7 +104,7 @@ export const getRestaurant = async (req, res) => {
       [id]
     );
     const menuItems = await pool.query(
-      "SELECT mi.menu_item_id,mi.category_id,mi.name as menu_name, mi.description, mi.price, mi.is_available, mi.menu_item_image_url,mc.restaurant_id, mc.name category_name, mc.menu_category_image_url FROM menu_items mi join menu_categories mc on (mi.category_id = mc.category_id) WHERE restaurant_id = $1",
+      `SELECT mi.*, mi.created_at, mc.name as category_name, mc.menu_category_image_url, COALESCE((SELECT CAST(SUM(oi.quantity) AS INTEGER) FROM order_items oi WHERE oi.menu_item_id = mi.menu_item_id), 0) as order_count FROM menu_items mi JOIN menu_categories mc ON mi.category_id = mc.category_id WHERE mc.restaurant_id = $1`,
       [id]
     );
 

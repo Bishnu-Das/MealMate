@@ -107,6 +107,17 @@ const OrderHistoryPage = () => {
                   )}
                 </div>
               )}
+              {order.status === 'out_for_delivery' && (
+                <div className="mt-4 flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => navigate(`/chat/${order.order_id}`)}
+                  >
+                    Chat with Rider
+                  </Button>
+                </div>
+              )}
 
               <div className="mt-4 border-t pt-4">
                 <h3 className="text-md font-semibold mb-2">Items:</h3>

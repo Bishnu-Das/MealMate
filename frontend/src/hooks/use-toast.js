@@ -1,7 +1,7 @@
 import * as React from "react";
 
 const TOAST_LIMIT = 1;
-const TOAST_REMOVE_DELAY = 1000000;
+const TOAST_REMOVE_DELAY = 5000;
 
 const actionTypes = {
   ADD_TOAST: "ADD_TOAST",
@@ -51,18 +51,9 @@ export const reducer = (state, action) => {
 
     case actionTypes.DISMISS_TOAST: {
       const { toastId } = action;
-
-      if (toastId) {
-        addToRemoveQueue(toastId);
-      } else {
-        state.toasts.forEach((toast) => addToRemoveQueue(toast.id));
-      }
-
       return {
         ...state,
-        toasts: state.toasts.map((t) =>
-          t.id === toastId || toastId === undefined ? { ...t, open: false } : t
-        ),
+        toasts: state.toasts.filter((t) => t.id !== toastId),
       };
     }
 
@@ -109,6 +100,8 @@ function toast(props) {
       onOpenChange: (open) => {
         if (!open) dismiss();
       },
+      onAccept: props.onAccept ? () => props.onAccept(id) : undefined,
+      onReject: props.onReject ? () => props.onReject(id) : undefined,
     },
   });
 

@@ -1,37 +1,39 @@
 import { useEffect, useState, useCallback } from "react";
 import { Search } from "lucide-react";
+import toast from "react-hot-toast";
 
 import { Input } from "../restaurant/components/ui/input";
 import { RestaurantHeader } from "../Components/restprof/RestaurantHeader";
 import { FoodItem } from "../Components/restprof/FoodItem";
 import { CartSidebar } from "../Components/restprof/CartSidebar";
-import { MenuCategories } from "../Components/restprof/MenuCategories";
+import { FoodFilter } from "../Components/restprof/FoodFilter";
 import { axiosInstance } from "../../lib/axios";
 import { useCartStore } from "../store/cartStore";
+import { userAuthStore } from "../store/userAuthStore";
 import { useNavigate, useParams } from "react-router-dom";
 import Navbar from "../Components/skeleton/Navbar";
 
 export default function Restaurant() {
   const [activeCategory, setActiveCategory] = useState("Popular");
   const [searchQuery, setSearchQuery] = useState("");
-  const { cartItems, addToCart, updateQuantity, removeFromCart, setCartItems: setCartItemsFromStore } = useCartStore();
+  const { cartItems, addToCart, updateQuantity, removeFromCart, clearCart } = useCartStore();
+  const { authUser } = userAuthStore();
   const navigate = useNavigate();
   const [darkMode, setDarkMode] = useState(false);
   const [menuItems, setmenuItems] = useState([]);
   const [menuCategories, setMenuCategories] = useState([]);
   const [restaurant, setRestaurant] = useState();
 
+  const [filters, setFilters] = useState({
+    sortBy: 'relevance',
+    priceRange: [0, 100],
+    selectedCategories: []
+  });
+
   const { id } = useParams();
   console.log("rest id: ", id);
 
-  const fetchCart = useCallback(async () => {
-    try {
-      const res = await axiosInstance.get("/customer/cart");
-      setCartItemsFromStore(res.data.cart.sort((a, b) => a.cart_item_id - b.cart_item_id));
-    } catch (err) {
-      console.error("Error fetching cart:", err);
-    }
-  }, [setCartItemsFromStore]);
+  
 
   useEffect(() => {
     axiosInstance
@@ -58,19 +60,41 @@ export default function Restaurant() {
       .catch((err) => {
         console.error("Error fetching restaurant details:", err);
       });
+  }, [id]);
 
-    fetchCart();
-  }, [id, fetchCart]);
-
-  const filteredItems = menuItems.filter((item) => {
-    const matchesCategory = activeCategory === "Popular" ? true : item.category_name === activeCategory;
-    const matchesSearch =
-      item.menu_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.description.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
+  const filteredItems = menuItems.filter(item => {
+    const matchesCategory = filters.selectedCategories.length === 0 || filters.selectedCategories.includes(item.category_id);
+    const matchesPrice = item.price >= filters.priceRange[0] && item.price <= filters.priceRange[1];
+    const matchesSearch = 
+      (item.menu_name && item.menu_name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (item.description && item.description.toLowerCase().includes(searchQuery.toLowerCase()));
+    return matchesCategory && matchesPrice && matchesSearch;
+  }).sort((a, b) => {
+    switch (filters.sortBy) {
+      case 'price-low':
+        return a.price - b.price;
+      case 'price-high':
+        return b.price - a.price;
+      case 'newest':
+        return new Date(b.created_at) - new Date(a.created_at);
+      case 'most-sold':
+        return b.order_count - a.order_count;
+      default:
+        return 0;
+    }
   });
 
+  useEffect(() => {
+    if (!authUser) {
+      clearCart();
+    }
+  }, [authUser, clearCart]);
+
   const handleAddToCart = async (item) => {
+    if (!authUser) {
+      toast.error("Please log in to add items to your cart.");
+      return;
+    }
     try {
       const res = await axiosInstance.post("/customer/add_cart", {
         menu_item_id: item.menu_item_id,
@@ -145,15 +169,8 @@ export default function Restaurant() {
           </div>
         </div>
 
-        {/* Menu Categories */}
         <div className="container mx-auto px-6 pb-8">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border border-gray-200 dark:border-gray-700">
-            <MenuCategories
-              categories={menuCategories}
-              activeCategory={activeCategory}
-              onCategoryChange={setActiveCategory}
-            />
-          </div>
+          <FoodFilter menuCategories={menuCategories} onFilterChange={setFilters} />
         </div>
 
         {/* Menu Items */}

@@ -87,7 +87,8 @@ CREATE TABLE menu_items (
   price DECIMAL(10,2) NOT NULL,
   discount DECIMAL(10,2),
   is_available BOOLEAN DEFAULT true,
-  menu_item_image_url VARCHAR(255)
+  menu_item_image_url VARCHAR(255),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- CARTS

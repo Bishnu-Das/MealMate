@@ -24,14 +24,20 @@ const Home = () => {
     getcategories();
 
     if (user && user.user_id) {
-      socketService.connect("customer", user.user_id);
-
-      socketService.on("order_accepted", ({ orderId, riderProfile }) => {
+      const handleOrderAccepted = ({ orderId, riderProfile }) => {
         console.log(`Order ${orderId} accepted by rider:`, riderProfile);
         addNotification({ orderId, riderProfile, type: 'order_accepted' });
-      });
-    }
+      };
 
+      socketService.on("order_accepted", handleOrderAccepted);
+
+      return () => {
+        socketService.off("order_accepted", handleOrderAccepted);
+      };
+    }
+  }, [user]);
+
+  useEffect(() => {
     function handleClickOutside(event) {
       if (notificationRef.current && !notificationRef.current.contains(event.target)) {
         setShowNotifications(false);
@@ -44,10 +50,8 @@ const Home = () => {
 
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
-      socketService.off("order_accepted");
-      // No need to disconnect here, as socketService is shared
     };
-  }, [user, showNotifications]);
+  }, [showNotifications]);
 
   return (
     <div className="min-h-screen">
