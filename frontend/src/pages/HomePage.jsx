@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import HeroSection from "../components/HeroSection";
 import FeaturesSection from "../components/FeaturesSection";
 import FeaturedRestaurants from "../components/FeaturedRestaurants";
@@ -19,23 +19,43 @@ const Home = () => {
   const [showNotifications, setShowNotifications] = useState(false);
   const notificationRef = useRef();
 
+  const handleOrderAccepted = useCallback(({ orderId, riderProfile }) => {
+    console.log(`Order ${orderId} accepted by rider:`, riderProfile);
+    addNotification({ orderId, riderProfile, type: 'order_accepted' });
+  }, [addNotification]);
+
+  const handleOrderStatusUpdated = useCallback((updatedOrder) => {
+    console.log('Customer received order_status_updated event in handler:', updatedOrder);
+    if (updatedOrder.status === 'preparing') {
+      addNotification({ orderId: updatedOrder.order_id, status: updatedOrder.status, type: 'order_status_update', message: `Restaurant has accepted your order #${updatedOrder.order_id}.` });
+    } else if (updatedOrder.status === 'restaurant_rejected') {
+      addNotification({ orderId: updatedOrder.order_id, status: updatedOrder.status, type: 'order_status_update', message: `Restaurant has rejected your order #${updatedOrder.order_id}.` });
+    }
+  }, [addNotification]);
+
+  // Effect for fetching initial data (restaurants, categories)
   useEffect(() => {
     getrestaurants();
     getcategories();
+  }, []);
 
+  // Effect for managing socket connection and event listeners
+  useEffect(() => {
     if (user && user.user_id) {
-      const handleOrderAccepted = ({ orderId, riderProfile }) => {
-        console.log(`Order ${orderId} accepted by rider:`, riderProfile);
-        addNotification({ orderId, riderProfile, type: 'order_accepted' });
-      };
+      console.log(`HomePage: Connecting socket with user ID: ${user.user_id}`);
+      socketService.connect(user.user_id, 'customer'); // Connect with user_id and type
 
       socketService.on("order_accepted", handleOrderAccepted);
+      socketService.on("order_status_updated", handleOrderStatusUpdated);
 
       return () => {
+        console.log("HomePage: Cleaning up customer homepage socket listeners and disconnecting.");
         socketService.off("order_accepted", handleOrderAccepted);
+        socketService.off("order_status_updated", handleOrderStatusUpdated);
+        socketService.disconnect();
       };
     }
-  }, [user]);
+  }, [user, handleOrderAccepted, handleOrderStatusUpdated]);
 
   useEffect(() => {
     function handleClickOutside(event) {

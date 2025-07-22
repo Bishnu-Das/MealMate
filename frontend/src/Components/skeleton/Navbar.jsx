@@ -2,14 +2,20 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import { userAuthStore } from "../../store/userAuthStore";
+import { useRiderAuthStore } from "../../rider/store/riderAuthStore";
 
 const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { logout, authUser } = userAuthStore();
+  const { authrider, logout: riderLogout } = useRiderAuthStore();
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    logout();
+    if (authUser) {
+      logout();
+    } else if (authrider) {
+      riderLogout();
+    }
     navigate("/login");
   };
 
@@ -20,7 +26,6 @@ const Navbar = () => {
           <li>
             <Link to="/profile">
               {authUser.name}
-              {console.log(authUser)}
             </Link>
           </li>
           <li>
@@ -30,6 +35,16 @@ const Navbar = () => {
             >
               Logout
             </button>
+          </li>
+        </>
+      );
+    } else if (authrider) {
+      return (
+        <>
+          <li>
+            <Link to="/rider/data/profile">
+              {authrider.name}
+            </Link>
           </li>
         </>
       );
@@ -67,12 +82,16 @@ const Navbar = () => {
 
         {/* Desktop Links */}
         <ul className="hidden md:flex gap-6 items-center font-medium">
-          <li>
-            <Link to="/">Home</Link>
-          </li>
-          <li>
-            <Link to="/restaurants">Restaurants</Link>
-          </li>
+          {!authrider && (
+            <>
+              <li>
+                <Link to="/">Home</Link>
+              </li>
+              <li>
+                <Link to="/restaurants">Restaurants</Link>
+              </li>
+            </>
+          )}
           
           
           {authUser && (
@@ -95,30 +114,22 @@ const Navbar = () => {
       {/* Mobile Menu */}
       {mobileMenuOpen && (
         <ul className="md:hidden flex flex-col items-center gap-4 py-4 font-medium bg-[#e21b70] text-white">
-          <li>
-            <Link to="/" onClick={() => setMobileMenuOpen(false)}>
-              Home
-            </Link>
-          </li>
-          <li>
-            <Link to="/restaurants" onClick={() => setMobileMenuOpen(false)}>
-              Restaurants
-            </Link>
-          </li>
-          
-          
-
-          {authUser && (
-            <li>
-              <Link
-                to="/order-history"
-                onClick={() => setMobileMenuOpen(false)}
-                className="hover:underline"
-              >
-                Orders
-              </Link>
-            </li>
+          {!authrider && (
+            <>
+              <li>
+                <Link to="/" onClick={() => setMobileMenuOpen(false)}>
+                  Home
+                </Link>
+              </li>
+              <li>
+                <Link to="/restaurants" onClick={() => setMobileMenuOpen(false)}>
+                  Restaurants
+                </Link>
+              </li>
+            </>
           )}
+          
+          
 
           {authUser ? (
             <>
@@ -143,6 +154,16 @@ const Navbar = () => {
                 </button>
               </li>
             </>
+          ) : authrider ? (
+            <li>
+              <Link
+                to="/rider/data/profile"
+                onClick={() => setMobileMenuOpen(false)}
+                className="hover:underline"
+              >
+                Profile
+              </Link>
+            </li>
           ) : (
             <>
               <li>

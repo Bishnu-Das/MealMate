@@ -4,15 +4,19 @@ import authorization from '../middleware/authorization.js';
 import authorizeRoles from '../middleware/athorizeRoles.js';
 
 const router = express.Router();
-const role = "customer";
+const customerRole = "customer";
+const riderRole = "rider";
 
 // Route to submit a restaurant review
-router.post('/restaurant', authorization, authorizeRoles(role), reviewController.submitRestaurantReview);
+router.post('/restaurant', authorization, authorizeRoles(customerRole), reviewController.submitRestaurantReview);
 
 // Route to submit a rider review
-router.post('/rider', authorization, authorizeRoles(role), reviewController.submitRiderReview);
+router.post('/rider', authorization, authorizeRoles(customerRole), reviewController.submitRiderReview);
 
 // Route to get all reviews for a specific restaurant
 router.get('/restaurant/:restaurantId', reviewController.getRestaurantReviews);
+
+// Route for a rider to get their own reviews
+router.get('/my-reviews', authorization, authorizeRoles(riderRole), reviewController.getRiderReviews);
 
 export default router;

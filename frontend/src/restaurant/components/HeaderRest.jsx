@@ -30,26 +30,36 @@ const HeaderRest = ({ onLogout }) => {
 
   useEffect(() => {
     if (authRestaurant && authRestaurant.restaurant_id) {
-      socketService.connect("restaurant", authRestaurant.restaurant_id);
+      socketService.connect(authRestaurant.restaurant_id, "restaurant");
 
-      socketService.on("new_order", (newOrder) => {
+      const handleNewOrder = (newOrder) => {
         console.log("New order notification:", newOrder);
         addNotification(newOrder);
-      });
+      };
 
-      socketService.on("order_status_updated", (updatedOrder) => {
-        // Remove notification if the order was rejected or accepted
-        // We don't remove from global state here, as it's handled by clearNotifications
+      const handleOrderStatusUpdated = (updatedOrder) => {
+        // Optional: Handle order status updates if needed, e.g., remove from a list of pending orders
+      };
 
-      });
-
-      socketService.on("order_accepted", ({ orderId, riderProfile }) => {
+      const handleOrderAcceptedByRider = ({ orderId, riderProfile }) => {
         console.log(`Order ${orderId} accepted by rider:`, riderProfile);
         addNotification({ orderId, riderProfile, type: 'order_accepted' });
         toast.success(`Order #${orderId} accepted by ${riderProfile.name}!`);
-      });
-    }
+      };
 
+      socketService.on("new_order", handleNewOrder);
+      socketService.on("order_status_updated", handleOrderStatusUpdated);
+      socketService.on("order_accepted", handleOrderAcceptedByRider);
+
+      return () => {
+        socketService.off("new_order", handleNewOrder);
+        socketService.off("order_status_updated", handleOrderStatusUpdated);
+        socketService.off("order_accepted", handleOrderAcceptedByRider);
+      };
+    }
+  }, [authRestaurant, addNotification]);
+
+  useEffect(() => {
     function handleClickOutside(event) {
       if (menuRef.current && !menuRef.current.contains(event.target)) {
         setShowMenu(false);
@@ -58,16 +68,15 @@ const HeaderRest = ({ onLogout }) => {
         setShowNotifications(false);
       }
     }
+
     if (showMenu || showNotifications) {
       document.addEventListener("mousedown", handleClickOutside);
     }
+
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
-      socketService.off("new_order");
-      socketService.off("order_status_updated");
-      socketService.disconnect();
     };
-  }, [showMenu, showNotifications, authRestaurant]);
+  }, [showMenu, showNotifications]);
 
   return (
     <header className="bg-gray-900 border-b border-gray-700 px-6 py-4 shadow-sm">

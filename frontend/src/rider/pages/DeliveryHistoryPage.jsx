@@ -23,11 +23,6 @@ const DeliveryHistoryPage = () => {
     fetchHistory();
   }, []);
 
-  // Calculate statistics
-  const totalEarnings = history.reduce((sum, order) => sum + parseFloat(order.total_amount || 0), 0);
-  const totalDeliveries = history.length;
-  const averageOrderValue = totalDeliveries > 0 ? (totalEarnings / totalDeliveries).toFixed(2) : 0;
-
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center">
@@ -52,41 +47,7 @@ const DeliveryHistoryPage = () => {
             <h1 className="text-4xl font-bold text-gray-800">Delivery History</h1>
           </div>
           
-          {/* Statistics Cards */}
-          {history.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
-              <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-6 border border-green-200">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-green-600 text-sm font-medium">Total Earnings</p>
-                    <p className="text-2xl font-bold text-green-800">${totalEarnings.toFixed(2)}</p>
-                  </div>
-                  <DollarSign className="size-8 text-green-600" />
-                </div>
-              </div>
-              
-              <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl p-6 border border-blue-200">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-blue-600 text-sm font-medium">Total Deliveries</p>
-                    <p className="text-2xl font-bold text-blue-800">{totalDeliveries}</p>
-                  </div>
-                  <Package className="size-8 text-blue-600" />
-                </div>
-              </div>
-              
-              <div className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl p-6 border border-purple-200">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-purple-600 text-sm font-medium">Average Order Value</p>
-                    <p className="text-2xl font-bold text-purple-800">${averageOrderValue}</p>
-                  </div>
-                  <TrendingUp className="size-8 text-purple-600" />
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
+          </div>
 
         {/* Delivery History Section */}
         <div className="bg-white rounded-2xl shadow-lg border border-blue-100 p-8">
@@ -137,21 +98,7 @@ const DeliveryHistoryPage = () => {
                     </div>
 
                     <div className="space-y-3">
-                      {order.customer_name && (
-                        <div className="flex items-center text-gray-700">
-                          <MapPin className="size-5 mr-2 text-red-600" />
-                          <span className="font-medium">Customer:</span>
-                          <span className="ml-2">{order.customer_name}</span>
-                        </div>
-                      )}
                       
-                      {order.restaurant_name && (
-                        <div className="flex items-center text-gray-700">
-                          <Package className="size-5 mr-2 text-orange-600" />
-                          <span className="font-medium">Restaurant:</span>
-                          <span className="ml-2">{order.restaurant_name}</span>
-                        </div>
-                      )}
                     </div>
                   </div>
 
@@ -189,37 +136,7 @@ const DeliveryHistoryPage = () => {
           )}
         </div>
 
-        {/* Achievement Section */}
-        {history.length > 0 && (
-          <div className="mt-8 bg-gradient-to-r from-yellow-50 to-amber-50 rounded-2xl shadow-lg border border-yellow-200 p-8">
-            <div className="flex items-center mb-4">
-              <Award className="size-6 text-yellow-600 mr-3" />
-              <h2 className="text-2xl font-bold text-yellow-800">Your Achievement</h2>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-white/70 backdrop-blur-sm rounded-xl p-6 border border-yellow-200">
-                <h3 className="text-lg font-semibold text-gray-800 mb-2">Delivery Milestone</h3>
-                <p className="text-gray-600">
-                  {totalDeliveries < 10 ? 'Getting Started' : 
-                   totalDeliveries < 50 ? 'Regular Rider' : 
-                   totalDeliveries < 100 ? 'Experienced Rider' : 'Expert Rider'}
-                </p>
-                <div className="mt-3 bg-yellow-200 rounded-full h-2">
-                  <div 
-                    className="bg-yellow-600 h-2 rounded-full transition-all duration-300"
-                    style={{ width: `${Math.min((totalDeliveries / 100) * 100, 100)}%` }}
-                  ></div>
-                </div>
-              </div>
-              <div className="bg-white/70 backdrop-blur-sm rounded-xl p-6 border border-yellow-200">
-                <h3 className="text-lg font-semibold text-gray-800 mb-2">Total Earnings</h3>
-                <p className="text-2xl font-bold text-green-600">${totalEarnings.toFixed(2)}</p>
-                <p className="text-sm text-gray-600 mt-1">Keep up the great work!</p>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
+        </div>
     </div>
   );
 };

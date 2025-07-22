@@ -5,7 +5,8 @@ const SOCKET_URL = 'http://localhost:5001'; // Your backend URL
 class SocketService {
   constructor() {
     this.socket = null;
-    this.connecting = false; // New flag to track connection attempts
+    this.connecting = false;
+    this.roomQueue = []; // Queue for rooms to join upon connection
   }
 
   connect(userId, userType) {
@@ -24,9 +25,14 @@ class SocketService {
     this.socket.on('connect', () => {
       console.log('SocketService: Connected. Socket ID:', this.socket.id);
       this.connecting = false;
+      
+      // Join the user-specific room
       if (userId && userType) {
         this.joinRoom(`${userType}_${userId}`);
       }
+
+      // Process any pending room joins
+      this.processRoomQueue();
     });
 
     this.socket.on('disconnect', (reason) => {
@@ -45,7 +51,20 @@ class SocketService {
       console.log(`SocketService: Joining room: ${roomName}`);
       this.socket.emit('join_room', roomName);
     } else {
-      console.warn(`SocketService: Cannot join room. Socket not connected.`);
+      console.warn(`SocketService: Socket not connected. Queuing join for room: ${roomName}`);
+      // Add to queue if not already there
+      if (!this.roomQueue.includes(roomName)) {
+        this.roomQueue.push(roomName);
+      }
+    }
+  }
+
+  processRoomQueue() {
+    if (this.socket && this.socket.connected) {
+      while(this.roomQueue.length > 0) {
+        const roomName = this.roomQueue.shift();
+        this.joinRoom(roomName);
+      }
     }
   }
 

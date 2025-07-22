@@ -5,6 +5,7 @@ import path from "path";
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  base: '/',
   plugins: [react(), tailwindcss()],
   optimizeDeps: {
     include: ['@radix-ui/react-radio-group'],
@@ -21,5 +22,6 @@ export default defineConfig({
         changeOrigin: true,
       },
     },
+    historyApiFallback: true,
   },
 });

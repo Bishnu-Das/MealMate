@@ -11,6 +11,7 @@ import {
   acceptOrder,
   updateOrderStatus,
   getOrderDetails,
+  getEarnings,
 } from "./riderController.js";
 
 
@@ -60,6 +61,8 @@ router.get(
   authorizeRoles(role),
   getDeliveryHistory
 );
+
+router.get("/earnings", authorization, authorizeRoles(role), getEarnings);
 
 router.put(
   "/orders/:orderId/accept",

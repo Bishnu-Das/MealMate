@@ -4,7 +4,7 @@ import { getIO } from '../../socket.js';
 // This is the new reusable function for creating orders.
 // It's designed to be called from different parts of the application (e.g., COD checkout, payment confirmation).
 // It takes a database client as an argument to run within a transaction.
-export const createOrderFromCart = async (userId, cartItems, client) => {
+export const createOrderFromCart = async (userId, cartItems, client, tran_id = null, status = 'pending_restaurant_acceptance') => {
   const ordersByRestaurant = cartItems.reduce((acc, item) => {
     const { restaurant_id } = item;
     if (!acc[restaurant_id]) {
@@ -21,8 +21,8 @@ export const createOrderFromCart = async (userId, cartItems, client) => {
     const totalAmount = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
     const orderResult = await client.query(
-      'INSERT INTO orders (user_id, restaurant_id, total_amount, status) VALUES ($1, $2, $3, $4) RETURNING *',
-      [userId, restaurantId, totalAmount, 'pending_restaurant_acceptance']
+      'INSERT INTO orders (user_id, restaurant_id, total_amount, status, tran_id) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+      [userId, restaurantId, totalAmount, status, tran_id]
     );
     const order = orderResult.rows[0];
     createdOrders.push(order);
@@ -75,6 +75,12 @@ export const createOrder = async (req, res) => {
       // Emit a new order event to the restaurant
       const io = getIO();
       io.to(`restaurant_${order.restaurant_id}`).emit('new_order', order);
+
+      // Store notification for the restaurant
+      await client.query(
+        'INSERT INTO notifications (user_id, target_type, target_id, order_id, type, message) VALUES ($1, $2, $3, $4, $5, $6)',
+        [userId, 'restaurant', order.restaurant_id, order.order_id, 'order_update', `You have a new order (#${order.order_id}) from a customer.`]
+      );
     }
 
     // After creating the order, clear the user's active cart

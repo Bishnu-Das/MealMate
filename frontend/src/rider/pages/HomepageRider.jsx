@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import { useRiderAuthStore } from "../store/riderAuthStore";
 import Navbar from "../../Components/skeleton/Navbar";
-import { Loader2, MapPin, Phone, Mail, User, Package, Clock, CheckCircle, Truck, History, Settings, LogOut, Bell, MessageCircle } from "lucide-react";
+import { Loader2, MapPin, Phone, Mail, User, Package, Clock, CheckCircle, Truck, History, Settings, LogOut, Bell, MessageCircle, DollarSign, Eye } from "lucide-react";
 import ChatModal from "../../Components/ChatModal";
 import { axiosInstance } from "../../../lib/axios";
 import toast from "react-hot-toast";
@@ -10,13 +10,16 @@ import socketService from "../../services/socketService";
 import { useNotificationStore } from "../../store/notificationStore";
 
 const HomepageRider = () => {
-  const [dashboardData, setDashboardData] = useState(null);
+  const [dashboardData, setDashboardData] = useState({ availableOrders: [], assignedOrders: [] });
   const [loading, setLoading] = useState(true);
   // Initialize isAvailable to true by default, it will be updated by fetched data
   const [isAvailable, setIsAvailable] = useState(true);
   const [showNotifications, setShowNotifications] = useState(false);
   const notificationRef = useRef();
   const [isChatModalOpen, setIsChatModalOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 6; // Display 6 available orders per page
+  const availableOrdersRef = useRef(null);
 
   const { authrider, logout, checkAuthRider } = useRiderAuthStore();
   const { notifications: globalNotifications, addNotification, clearNotifications } = useNotificationStore();
@@ -25,12 +28,13 @@ const HomepageRider = () => {
     checkAuthRider(); // Call checkAuthRider once on component mount
   }, []); // Empty dependency array to run only once
 
+  // Effect for fetching initial data
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
         const res = await axiosInstance.get("/rider/data/dashboard");
         setDashboardData(res.data);
-        setIsAvailable(res.data.isAvailable); // Set availability based on fetched data
+        setIsAvailable(res.data.isAvailable);
       } catch (err) {
         console.error("Error fetching dashboard data:", err);
         toast.error("Failed to load dashboard data.");
@@ -41,9 +45,19 @@ const HomepageRider = () => {
 
     if (authrider) {
       fetchDashboardData();
+    }
+  }, [authrider]);
+
+  // Effect for managing socket connection and event listeners
+  useEffect(() => {
+    if (authrider) {
+      // Connect and join rooms
+      socketService.connect(authrider.user_id, 'rider');
       socketService.joinRoom('riders');
 
+      // Define event handlers
       const handleNewDelivery = (newOrder) => {
+        console.log('Rider received new_delivery event with data:', newOrder);
         toast.success(`New order #${newOrder.order_id} available!`);
         addNotification(newOrder);
         setDashboardData((prevData) => ({
@@ -52,27 +66,33 @@ const HomepageRider = () => {
         }));
       };
 
-      const handleOrderAccepted = ({ orderId, riderProfile }) => {
-        console.log(`Order ${orderId} accepted by rider:`, riderProfile);
-        // Remove the accepted order from available orders if it was accepted by another rider
-        setDashboardData((prevData) => ({
-          ...prevData,
-          availableOrders: prevData.availableOrders.filter(
-            (order) => order.order_id !== orderId
-          ),
-        }));
+      const handleOrderAcceptedByOtherRider = ({ orderId, riderId }) => {
+        if (authrider.user_id !== riderId) {
+          toast.info(`Order #${orderId} was accepted by another rider.`);
+          setDashboardData((prevData) => ({
+            ...prevData,
+            availableOrders: prevData.availableOrders.filter(
+              (order) => order.order_id !== orderId
+            ),
+          }));
+        }
       };
 
+      // Register event listeners
       socketService.on("new_delivery", handleNewDelivery);
-      socketService.on("order_accepted", handleOrderAccepted);
+      socketService.on("order_accepted", handleOrderAcceptedByOtherRider);
 
+      // Cleanup on component unmount or when authrider changes
       return () => {
+        console.log("Cleaning up rider homepage socket listeners and disconnecting.");
         socketService.off("new_delivery", handleNewDelivery);
-        socketService.off("order_accepted", handleOrderAccepted);
+        socketService.off("order_accepted", handleOrderAcceptedByOtherRider);
+        socketService.disconnect();
       };
     }
-  }, [authrider]); // Only re-run when authrider changes
+  }, [authrider, addNotification]);
 
+  // Effect for handling clicks outside the notification dropdown
   useEffect(() => {
     function handleClickOutside(event) {
       if (notificationRef.current && !notificationRef.current.contains(event.target)) {
@@ -105,10 +125,30 @@ const HomepageRider = () => {
 
   const handleUpdateOrderStatus = async (orderId, newStatus) => {
     try {
-      await axiosInstance.put(`/rider/data/orders/${orderId}/status`, { status: newStatus });
+      const res = await axiosInstance.put(`/rider/data/orders/${orderId}/status`, { status: newStatus });
+      toast.success("Order status updated successfully!");
+      setDashboardData((prevData) => ({
+        ...prevData,
+        assignedOrders: prevData.assignedOrders.filter((order) =>
+          order.order_id === orderId ? newStatus !== 'delivered' : true
+        ).map((order) =>
+          order.order_id === orderId ? { ...order, order_status: newStatus } : order
+        ),
+      }));
     } catch (err) {
       console.error("Error updating order status:", err);
       toast.error(err?.response?.data?.message || "Failed to update order status.");
+    }
+  };
+
+  const totalPages = Math.ceil(dashboardData.availableOrders.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const currentAvailableOrders = dashboardData.availableOrders.slice(startIndex, startIndex + itemsPerPage);
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+    if (availableOrdersRef.current) {
+      availableOrdersRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   };
 
@@ -217,111 +257,73 @@ const HomepageRider = () => {
         </div>
 
         {/* Assigned Order Section */}
-        {dashboardData?.assignedOrder ? (
-          <div className="bg-gradient-to-r from-amber-50 to-yellow-50 rounded-2xl shadow-lg border border-amber-200 p-8 mb-8">
-            <div className="flex items-center mb-6">
-              <Package className="size-6 text-amber-600 mr-3" />
-              <h2 className="text-2xl font-bold text-amber-800">Active Delivery</h2>
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-8">
-              <div className="space-y-6">
-                <div className="bg-white/70 backdrop-blur-sm rounded-xl p-6 border border-amber-200">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                    <Package className="size-5 mr-2 text-blue-600" />
-                    Order Information
-                  </h3>
-                  <div className="space-y-2">
-                    <p className="text-gray-700"><span className="font-medium">Order ID:</span> #{dashboardData.assignedOrder.order_id}</p>
-                    <p className="text-gray-700 flex items-center">
-                      <Clock className="size-4 mr-2 text-gray-500" />
-                      <span className="font-medium">Status:</span>
-                      <span className={`ml-2 px-2 py-1 rounded-full text-xs font-semibold ${
-                        dashboardData.assignedOrder.order_status === 'preparing'
-                          ? 'bg-blue-100 text-blue-800'
-                          : 'bg-green-100 text-green-800'
-                      }`}>
-                        {dashboardData.assignedOrder.order_status}
-                      </span>
-                    </p>
-                    <p className="text-gray-700 text-lg font-semibold">
-                      Total: <span className="text-green-600">${dashboardData.assignedOrder.total_amount}</span>
-                    </p>
-                  </div>
+        {dashboardData?.assignedOrders && dashboardData.assignedOrders.length > 0 ? (
+          <div className="space-y-8">
+            {dashboardData.assignedOrders.map((order) => (
+              <div key={order.order_id} className="bg-gradient-to-r from-amber-50 to-yellow-50 rounded-2xl shadow-lg border border-amber-200 p-6 mb-4">
+                <div className="flex items-center mb-4">
+                  <Package className="size-5 text-amber-600 mr-2" />
+                  <h3 className="text-xl font-bold text-amber-800">Order #{order.order_id}</h3>
+                  <span className={`ml-auto px-3 py-1 rounded-full text-xs font-semibold ${
+                    order.order_status === 'preparing'
+                      ? 'bg-blue-100 text-blue-800'
+                      : 'bg-green-100 text-green-800'
+                  }`}>
+                    {order.order_status}
+                  </span>
                 </div>
 
-                <div className="bg-white/70 backdrop-blur-sm rounded-xl p-6 border border-amber-200">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                    <User className="size-5 mr-2 text-green-600" />
-                    Restaurant Details
-                  </h3>
-                  <div className="space-y-2">
-                    <p className="text-gray-700"><span className="font-medium">Name:</span> {dashboardData.assignedOrder.restaurant_name}</p>
-                    <p className="text-gray-700 flex items-center">
-                      <Phone className="size-4 mr-2 text-gray-500" />
-                      {dashboardData.assignedOrder.restaurant_phone}
-                    </p>
-                    <p className="text-gray-700 flex items-center">
-                      <Mail className="size-4 mr-2 text-gray-500" />
-                      {dashboardData.assignedOrder.restaurant_email}
-                    </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-700 mb-4">
+                  <div>
+                    <p><span className="font-medium">Restaurant:</span> {order.restaurant_name}</p>
+                    <p><span className="font-medium">Customer:</span> {order.customer_name}</p>
+                    <p><span className="font-medium">Total:</span> <span className="text-green-600 font-bold">${order.total_amount}</span></p>
                   </div>
-                </div>
-              </div>
-
-              <div className="space-y-6">
-                <div className="bg-white/70 backdrop-blur-sm rounded-xl p-6 border border-amber-200">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                    <MapPin className="size-5 mr-2 text-red-600" />
-                    Customer Details
-                  </h3>
-                  <div className="space-y-2">
-                    <p className="text-gray-700"><span className="font-medium">Name:</span> {dashboardData.assignedOrder.customer_name}</p>
-                    <p className="text-gray-700">
-                      <span className="font-medium">Drop-off Address:</span><br />
-                      <span className="text-sm bg-gray-100 p-2 rounded-lg block mt-1">
-                        {dashboardData.assignedOrder.dropoff_addr}
-                      </span>
-                    </p>
-                    {dashboardData.assignedOrder.dropoff_latitude && dashboardData.assignedOrder.dropoff_longitude && (
+                  <div>
+                    <p><span className="font-medium">Drop-off:</span> {order.dropoff_addr}</p>
+                    {order.dropoff_latitude && order.dropoff_longitude && (
                       <a
-                        href={`http://maps.google.com/?q=${dashboardData.assignedOrder.dropoff_latitude},${dashboardData.assignedOrder.dropoff_longitude}`}
+                        href={`http://maps.google.com/?q=${order.dropoff_latitude},${order.dropoff_longitude}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 text-sm font-medium"
+                        className="inline-flex items-center text-blue-600 hover:underline mt-1"
                       >
-                        <MapPin className="size-4 mr-2" />
+                        <MapPin className="size-4 mr-1" />
                         View on Map
                       </a>
                     )}
                   </div>
                 </div>
 
-                <div className="bg-white/70 backdrop-blur-sm rounded-xl p-6 border border-amber-200">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Quick Actions</h3>
-                  <div className="space-y-3">
-                    {dashboardData.assignedOrder.order_status === 'preparing' && (
-                      <button
-                        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center"
-                        onClick={() => handleUpdateOrderStatus(dashboardData.assignedOrder.order_id, 'out_for_delivery')}
-                      >
-                        <Truck className="size-5 mr-2" />
-                        Mark as Picked Up
-                      </button>
-                    )}
-                    {dashboardData.assignedOrder.order_status === 'out_for_delivery' && (
-                      <button
-                        className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center"
-                        onClick={() => handleUpdateOrderStatus(dashboardData.assignedOrder.order_id, 'delivered')}
-                      >
-                        <CheckCircle className="size-5 mr-2" />
-                        Mark as Delivered
-                      </button>
-                    )}
-                  </div>
+                <div className="flex flex-col sm:flex-row gap-3">
+                  {order.order_status === 'preparing' && (
+                    <button
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-3 rounded-lg transition-colors duration-200 flex items-center justify-center text-sm"
+                      onClick={() => handleUpdateOrderStatus(order.order_id, 'out_for_delivery')}
+                    >
+                      <Truck className="size-4 mr-2" />
+                      Mark as Picked Up
+                    </button>
+                  )}
+                  {order.order_status === 'out_for_delivery' && (
+                    <button
+                      className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-3 rounded-lg transition-colors duration-200 flex items-center justify-center text-sm"
+                      onClick={() => handleUpdateOrderStatus(order.order_id, 'delivered')}
+                    >
+                      <CheckCircle className="size-4 mr-2" />
+                      Mark as Delivered
+                    </button>
+                  )}
+                  <Link
+                    to={`/rider/data/orders/${order.order_id}`}
+                    className="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-3 rounded-lg transition-colors duration-200 flex items-center justify-center text-sm"
+                  >
+                    <Eye className="size-4 mr-2" />
+                    View Details
+                  </Link>
                 </div>
               </div>
-            </div>
+            ))}
           </div>
         ) : (
           <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl shadow-lg border border-blue-200 p-8 mb-8">
@@ -341,48 +343,99 @@ const HomepageRider = () => {
           </h2>
 
           {dashboardData?.availableOrders && dashboardData.availableOrders.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {dashboardData.availableOrders.map((order) => (
-                <div key={order.order_id} className="bg-gradient-to-br from-gray-50 to-blue-50 rounded-xl p-6 border border-gray-200 hover:shadow-lg transition-shadow duration-200">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-gray-800">Order #{order.order_id}</h3>
-                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                      order.status === 'preparing'
-                        ? 'bg-blue-100 text-blue-800'
-                        : 'bg-green-100 text-green-800'
-                    }`}>
-                      {order.status}
-                    </span>
+            <div className="space-y-6" ref={availableOrdersRef}>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {currentAvailableOrders.map((order) => (
+                  <div key={order.order_id} className="bg-gradient-to-br from-gray-50 to-blue-50 rounded-xl p-6 border border-gray-200 hover:shadow-lg transition-shadow duration-200">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-semibold text-gray-800">Order #{order.order_id}</h3>
+                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                        order.status === 'pending'
+                          ? 'bg-yellow-100 text-yellow-800'
+                          : 'bg-green-100 text-green-800'
+                      }`}>
+                        {order.status}
+                      </span>
+                    </div>
+                    <p className="text-2xl font-bold text-green-600 mb-4">${order.total_amount}</p>
+                    <p className="text-lg font-semibold text-gray-800 mb-4">Delivery Fee: ${order.delivery_fee}</p>
+                    <div className="space-y-2">
+                      <button
+                        className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center"
+                        onClick={async () => {
+                          try {
+                            await axiosInstance.put(`/rider/data/orders/${order.order_id}/accept`);
+                            toast.success("Order accepted!");
+                            clearNotifications();
+                            setShowNotifications(false);
+                            setDashboardData((prevData) => ({
+                              ...prevData,
+                              availableOrders: prevData.availableOrders.filter(
+                                (ao) => ao.order_id !== order.order_id
+                              ),
+                              assignedOrders: [...(prevData.assignedOrders || []), { ...order, order_status: 'out_for_delivery' }],
+                            }));
+                          } catch (err) {
+                            console.error("Error accepting order from notification:", err);
+                            toast.error(err?.response?.data?.message || "Failed to accept order.");
+                          }
+                        }}
+                      >
+                        <CheckCircle className="size-5 mr-2" />
+                        Accept Order
+                      </button>
+                      <Link
+                        to={`/rider/data/orders/${order.order_id}`}
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center"
+                      >
+                        <Package className="size-5 mr-2" />
+                        View Details
+                      </Link>
+                    </div>
                   </div>
-                  <p className="text-2xl font-bold text-green-600 mb-4">${order.total_amount}</p>
-                  <div className="space-y-2">
+                ))}
+              </div>
+
+              {/* Pagination Controls */}
+              {totalPages > 1 && (
+                <div className="mt-8 flex justify-center items-center space-x-2">
+                  <button
+                    onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
+                    disabled={currentPage === 1}
+                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                      currentPage === 1
+                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                        : 'bg-white text-gray-700 hover:bg-gray-50 shadow-sm'
+                    }`}
+                  >
+                    Previous
+                  </button>
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
                     <button
-                      className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center"
-                      onClick={async () => {
-                        try {
-                          await axiosInstance.put(`/rider/data/orders/${order.order_id}/accept`);
-                          clearNotifications(); // Clear all notifications after accepting one
-                          setShowNotifications(false); // Close notifications after accepting
-                        } catch (err) {
-                          console.error("Error accepting order from notification:", err);
-                          toast.error(err?.response?.data?.message || "Failed to accept order.");
-                        }
-                      }}
+                      key={page}
+                      onClick={() => handlePageChange(page)}
+                      className={`w-10 h-10 rounded-lg font-medium transition-colors ${
+                        currentPage === page
+                          ? 'bg-blue-500 text-white shadow-lg'
+                          : 'bg-white text-gray-700 hover:bg-gray-50 shadow-sm'
+                      }`}
                     >
-                    >
-                      <CheckCircle className="size-5 mr-2" />
-                      Accept Order
+                      {page}
                     </button>
-                    <Link
-                      to={`/rider/data/orders/${order.order_id}`}
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center"
-                    >
-                      <Package className="size-5 mr-2" />
-                      View Details
-                    </Link>
-                  </div>
+                  ))}
+                  <button
+                    onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
+                    disabled={currentPage === totalPages}
+                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                      currentPage === totalPages
+                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                        : 'bg-white text-gray-700 hover:bg-gray-50 shadow-sm'
+                    }`}
+                  >
+                    Next
+                  </button>
                 </div>
-              ))}
+              )}
             </div>
           ) : (
             <div className="text-center py-12">
@@ -408,6 +461,13 @@ const HomepageRider = () => {
           >
             <History className="size-5 mr-2" />
             View Delivery History
+          </Link>
+          <Link
+            to="/rider/earnings"
+            className="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 flex items-center"
+          >
+            <DollarSign className="size-5 mr-2" />
+            View Performance
           </Link>
           <Link
             to="/rider/data/profile"
