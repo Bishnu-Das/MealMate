@@ -345,10 +345,11 @@ function RestaurantProfile() {
                     id="longitude"
                     value={location.lng ?? ""}
                     placeholder="longitude"
+                    type="number"
                     onChange={(e) =>
                       setLocation((prev) => ({
                         ...prev,
-                        lng: parseFloat(e.target.value),
+                        lng: e.target.value,
                       }))
                     }
                     className="bg-gray-700 text-white"
@@ -357,10 +358,11 @@ function RestaurantProfile() {
                     id="latitude"
                     value={location.lat ?? ""}
                     placeholder="latitude"
+                    type="number"
                     onChange={(e) =>
                       setLocation((prev) => ({
                         ...prev,
-                        lat: parseFloat(e.target.value),
+                        lat: e.target.value,
                       }))
                     }
                     className="bg-gray-700 text-white"

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import SidebarRest from "../components/SidebarRest";
 import HeaderRest from "../components/HeaderRest";
 import DashboardRest from "../components/DashboardRest";
@@ -10,18 +10,8 @@ import LoginPage from "../components/LoginPageRest";
 import { restaurantAuthStore } from "../store/restaurantAuthStore";
 
 function HomepageRest() {
-  const [activeTab, setActiveTab] = useState("dashboard");
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [activeTab, setActiveTab] = React.useState("dashboard");
   const { authRestaurant } = restaurantAuthStore();
-
-  // const handleLogin = () => {
-  //   setIsLoggedInn(isLoggedIn);
-  // };
-  useEffect(() => {
-    if (authRestaurant) {
-      setIsLoggedIn(true);
-    }
-  }, [authRestaurant]);
 
   const renderContent = () => {
     switch (activeTab) {
@@ -42,7 +32,7 @@ function HomepageRest() {
     }
   };
 
-  if (!isLoggedIn) {
+  if (!authRestaurant) {
     return <LoginPage />;
   }
 

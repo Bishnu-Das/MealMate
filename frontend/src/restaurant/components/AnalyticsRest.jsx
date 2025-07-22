@@ -36,44 +36,58 @@ import {
 import { useEffect, useState } from "react";
 import { axiosInstance } from "../../../lib/axios";
 
-const dailyRevenueData = [
-  { day: "Mon", revenue: 850, orders: 28 },
-  { day: "Tue", revenue: 1200, orders: 35 },
-  { day: "Wed", revenue: 980, orders: 31 },
-  { day: "Thu", revenue: 1450, orders: 42 },
-  { day: "Fri", revenue: 1800, orders: 58 },
-  { day: "Sat", revenue: 2100, orders: 67 },
-  { day: "Sun", revenue: 1650, orders: 48 },
-];
+// const dailyRevenueData = [
+//   { day: "Mon", revenue: 850, orders: 28 },
+//   { day: "Tue", revenue: 1200, orders: 35 },
+//   { day: "Wed", revenue: 980, orders: 31 },
+//   { day: "Thu", revenue: 1450, orders: 42 },
+//   { day: "Fri", revenue: 1800, orders: 58 },
+//   { day: "Sat", revenue: 2100, orders: 67 },
+//   { day: "Sun", revenue: 1650, orders: 48 },
+// ];
 
-const weeklyTrendsData = [
-  { week: "Week 1", revenue: 8500, orders: 280 },
-  { week: "Week 2", revenue: 9200, orders: 310 },
-  { week: "Week 3", revenue: 8800, orders: 295 },
-  { week: "Week 4", revenue: 10100, orders: 340 },
-];
+// const weeklyTrendsData = [
+//   { week: "Week 1", revenue: 8500, orders: 280 },
+//   { week: "Week 2", revenue: 9200, orders: 310 },
+//   { week: "Week 3", revenue: 8800, orders: 295 },
+//   { week: "Week 4", revenue: 10100, orders: 340 },
+// ];
 
-const categoryData = [
-  { name: "Pizza", value: 35, color: "#FF6B6B" },
-  { name: "Burgers", value: 25, color: "#4ECDC4" },
-  { name: "Pasta", value: 20, color: "#45B7D1" },
-  { name: "Salads", value: 12, color: "#96CEB4" },
-  { name: "Drinks", value: 8, color: "#FFEAA7" },
-];
+// const categoryData = [
+//   { name: "Pizza", value: 35, color: "#FF6B6B" },
+//   { name: "Burgers", value: 25, color: "#4ECDC4" },
+//   { name: "Pasta", value: 20, color: "#45B7D1" },
+//   { name: "Salads", value: 12, color: "#96CEB4" },
+//   { name: "Drinks", value: 8, color: "#FFEAA7" },
+// ];
 
-const topItems = [
-  { name: "Margherita Pizza", orders: 89, revenue: "$1,334.11" },
-  { name: "Chicken Burger", orders: 76, revenue: "$987.24" },
-  { name: "Pasta Carbonara", orders: 65, revenue: "$1,039.35" },
-  { name: "Caesar Salad", orders: 54, revenue: "$593.46" },
-  { name: "Pepperoni Pizza", orders: 48, revenue: "$719.52" },
-];
+// const topItems = [
+//   { name: "Margherita Pizza", orders: 89, revenue: "$1,334.11" },
+//   { name: "Chicken Burger", orders: 76, revenue: "$987.24" },
+//   { name: "Pasta Carbonara", orders: 65, revenue: "$1,039.35" },
+//   { name: "Caesar Salad", orders: 54, revenue: "$593.46" },
+//   { name: "Pepperoni Pizza", orders: 48, revenue: "$719.52" },
+// ];
 
 const AnalyticsRest = () => {
   const [dailyRevenueData, setDailyRevenueData] = useState([]);
   const [topItems, setTopItems] = useState([]);
   const [weeklyTrendsData, setWeeklyTrendeData] = useState([]);
   const [categoryData, setCategoryData] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [weeklyRevenueVal, setWeeklyRevenueVal] = useState({
+    last_week: 0,
+    last_two_week: 0,
+  });
+  const [totalOrderLastWeekVal, setTotalOrderLastWeekVal] = useState({
+    last_week: 0,
+    second_last_week: 0,
+  });
+  const [newCustomerVal, setNewCustomerVal] = useState({
+    last_week: 0,
+    second_last_week: 0,
+  });
+  const [rating, setRating] = useState();
 
   const getDailyRevenue = async () => {
     try {
@@ -86,6 +100,74 @@ const AnalyticsRest = () => {
       return [];
     }
   };
+  // const getWeekLyRevenueVal = async () => {
+  //   try {
+  //     const response = await axiosInstance.get(
+  //       "restaurant/stats/last_two_week_revenue"
+  //     );
+  //     console.log("weekly revenue data: ", response.data);
+  //     return response.data;
+  //   } catch (err) {
+  //     console.error("Error getting weekly revenue val: ", err.message);
+  //     return [];
+  //   }
+  // };
+  // const getTotalOrderLastWeekVal = async () => {
+  //   try {
+  //     const response = await axiosInstance.get(
+  //       "restaurant/stats/last_two_week_order_count"
+  //     );
+  //     return response.data;
+  //   } catch (err) {
+  //     console.error("Error getting weekly revenue val: ", err.message);
+  //     return [];
+  //   }
+  // };
+
+  // const getNewCustomerNumberLastTwoWeek = async () => {
+  //   try {
+  //     const response = await axiosInstance.get(
+  //       "restaurant/stats/last_two_week_new_customer"
+  //     );
+  //     return response.data;
+  //   } catch (err) {
+  //     console.error("Error getting weekly revenue val: ", err.message);
+  //     return [];
+  //   }
+  // };
+
+  // useEffect(() => {
+  //   const fetchWeeklyRevenueval = async () => {
+  //     const res = await getWeekLyRevenueVal();
+  //     setWeeklyRevenueVal(res);
+  //     const res2 = await getTotalOrderLastWeekVal();
+  //     setTotalOrderLastWeekVal(res2);
+  //     const res3 = await getNewCustomerNumberLastTwoWeek();
+  //     setNewCustomerVal(res3);
+  //   };
+  //   fetchWeeklyRevenueval();
+  // }, []);
+
+  useEffect(() => {
+    const fetchAnalytics = async () => {
+      try {
+        const [revenueRes, orderRes, customerRes] = await Promise.all([
+          axiosInstance.get("/restaurant/stats/last_two_week_revenue"),
+          axiosInstance.get("/restaurant/stats/last_two_week_order_count"),
+          axiosInstance.get("/restaurant/stats/last_two_week_new_customer"),
+        ]);
+        setWeeklyRevenueVal(revenueRes.data);
+        setTotalOrderLastWeekVal(orderRes.data);
+        setNewCustomerVal(customerRes.data);
+      } catch (err) {
+        console.error("Error fetching analytics:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAnalytics();
+  }, []);
 
   useEffect(() => {
     const fetchDailyRevenue = async () => {
@@ -177,13 +259,70 @@ const AnalyticsRest = () => {
             </CardTitle>
             <DollarSign className="h-4 w-4 text-green-400" />
           </CardHeader>
+
           <CardContent>
-            <div className="text-2xl font-bold text-white">$10,030</div>
-            <div className="flex items-center space-x-1 mt-1">
-              <TrendingUp className="h-4 w-4 text-green-400" />
-              <span className="text-sm text-green-400">+14.2%</span>
-              <span className="text-sm text-gray-400">vs last week</span>
-            </div>
+            {(() => {
+              const lastWeek = parseFloat(weeklyRevenueVal?.last_week ?? 0);
+              const prevWeek = parseFloat(weeklyRevenueVal?.last_two_week ?? 0);
+
+              return (
+                <>
+                  <div className="text-2xl font-bold text-white">
+                    ৳ {lastWeek.toFixed(2)}
+                  </div>
+
+                  <div className="flex items-center space-x-1 mt-1">
+                    {prevWeek === 0 && lastWeek === 0 ? (
+                      <>
+                        <span className="text-sm text-gray-400">
+                          No revenue in the last two weeks
+                        </span>
+                        {console.log("1st")}
+                      </>
+                    ) : prevWeek === 0 ? (
+                      <>
+                        <TrendingUp className="h-4 w-4 text-green-400" />
+                        <span className="text-sm text-green-400">+100%</span>
+                        <span className="text-sm text-gray-400">
+                          vs last week
+                        </span>
+                        {console.log("2nd")}
+                      </>
+                    ) : lastWeek >= prevWeek ? (
+                      <>
+                        <TrendingUp className="h-4 w-4 text-green-400" />
+                        <span className="text-sm text-green-400">
+                          +{" "}
+                          {(((lastWeek - prevWeek) / prevWeek) * 100).toFixed(
+                            2
+                          )}
+                          %
+                        </span>
+                        <span className="text-sm text-gray-400">
+                          vs last week
+                        </span>
+                        {console.log("3rd")}
+                      </>
+                    ) : (
+                      <>
+                        <TrendingDown className="h-4 w-4 text-red-400" />
+                        <span className="text-sm text-red-400">
+                          -{" "}
+                          {(((prevWeek - lastWeek) / prevWeek) * 100).toFixed(
+                            2
+                          )}
+                          %
+                        </span>
+                        <span className="text-sm text-gray-400">
+                          vs last week
+                        </span>
+                        {console.log("4th")}
+                      </>
+                    )}
+                  </div>
+                </>
+              );
+            })()}
           </CardContent>
         </Card>
 
@@ -194,13 +333,76 @@ const AnalyticsRest = () => {
             </CardTitle>
             <ShoppingBag className="h-4 w-4 text-blue-400" />
           </CardHeader>
-          <CardContent>
+
+          {/* <CardContent>
             <div className="text-2xl font-bold text-white">309</div>
             <div className="flex items-center space-x-1 mt-1">
               <TrendingUp className="h-4 w-4 text-green-400" />
               <span className="text-sm text-green-400">+8.1%</span>
               <span className="text-sm text-gray-400">vs last week</span>
             </div>
+          </CardContent> */}
+          <CardContent>
+            {(() => {
+              const lastWeek = parseFloat(
+                totalOrderLastWeekVal?.last_week ?? 0
+              );
+              const prevWeek = parseFloat(
+                totalOrderLastWeekVal?.second_last_week ?? 0
+              );
+
+              return (
+                <>
+                  <div className="text-2xl font-bold text-white">
+                    {lastWeek}
+                  </div>
+
+                  <div className="flex items-center space-x-1 mt-1">
+                    {lastWeek === 0 && prevWeek === 0 ? (
+                      <span className="text-sm text-gray-400">
+                        No orders in the last two weeks
+                      </span>
+                    ) : prevWeek === 0 ? (
+                      <>
+                        <TrendingUp className="h-4 w-4 text-green-400" />
+                        <span className="text-sm text-green-400">+100%</span>
+                        <span className="text-sm text-gray-400">
+                          vs last week
+                        </span>
+                      </>
+                    ) : lastWeek >= prevWeek ? (
+                      <>
+                        <TrendingUp className="h-4 w-4 text-green-400" />
+                        <span className="text-sm text-green-400">
+                          +{" "}
+                          {(((lastWeek - prevWeek) / prevWeek) * 100).toFixed(
+                            2
+                          )}
+                          %
+                        </span>
+                        <span className="text-sm text-gray-400">
+                          vs last week
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <TrendingDown className="h-4 w-4 text-red-400" />
+                        <span className="text-sm text-red-400">
+                          -{" "}
+                          {(((prevWeek - lastWeek) / prevWeek) * 100).toFixed(
+                            2
+                          )}
+                          %
+                        </span>
+                        <span className="text-sm text-gray-400">
+                          vs last week
+                        </span>
+                      </>
+                    )}
+                  </div>
+                </>
+              );
+            })()}
           </CardContent>
         </Card>
 
@@ -211,13 +413,70 @@ const AnalyticsRest = () => {
             </CardTitle>
             <Users className="h-4 w-4 text-purple-400" />
           </CardHeader>
-          <CardContent>
+
+          {/* <CardContent>
             <div className="text-2xl font-bold text-white">47</div>
             <div className="flex items-center space-x-1 mt-1">
               <TrendingDown className="h-4 w-4 text-red-400" />
               <span className="text-sm text-red-400">-2.3%</span>
               <span className="text-sm text-gray-400">vs last week</span>
             </div>
+          </CardContent> */}
+          <CardContent>
+            {(() => {
+              const lastWeek = parseFloat(newCustomerVal?.last_week ?? 0);
+              const prevWeek = parseFloat(
+                newCustomerVal?.second_last_week ?? 0
+              );
+              const isIncrease = lastWeek > prevWeek;
+
+              const percentChange =
+                prevWeek === 0
+                  ? lastWeek === 0
+                    ? 0
+                    : 100
+                  : Math.abs(((lastWeek - prevWeek) / prevWeek) * 100);
+
+              return (
+                <>
+                  <div className="text-2xl font-bold text-white">
+                    {lastWeek}
+                  </div>
+
+                  <div className="flex items-center space-x-1 mt-1">
+                    {lastWeek === 0 && prevWeek === 0 ? (
+                      <span className="text-sm text-gray-400">
+                        No new customers in the last two weeks
+                      </span>
+                    ) : isIncrease ? (
+                      <>
+                        <TrendingUp className="h-4 w-4 text-green-400" />
+                        <span className="text-sm text-green-400">
+                          +{percentChange.toFixed(2)}%
+                        </span>
+                        <span className="text-sm text-gray-400">
+                          vs last week
+                        </span>
+                      </>
+                    ) : lastWeek < prevWeek ? (
+                      <>
+                        <TrendingDown className="h-4 w-4 text-red-400" />
+                        <span className="text-sm text-red-400">
+                          -{percentChange.toFixed(2)}%
+                        </span>
+                        <span className="text-sm text-gray-400">
+                          vs last week
+                        </span>
+                      </>
+                    ) : (
+                      <span className="text-sm text-gray-400">
+                        No change from last week
+                      </span>
+                    )}
+                  </div>
+                </>
+              );
+            })()}
           </CardContent>
         </Card>
 

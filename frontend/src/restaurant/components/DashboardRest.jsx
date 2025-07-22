@@ -47,6 +47,11 @@ const iconMap = {
 const DashboardRest = ({ setActiveTab, setCurrentView }) => {
   const { authRestaurant } = restaurantAuthStore();
 
+  if (!authRestaurant) {
+    // User is logged out, redirect to login page
+    return <Navigate to="/partner" replace />;
+  }
+
   const [recentOrders, setRecentOrders] = useState([]);
   const [statsCards, setStastCards] = useState([]);
 

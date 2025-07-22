@@ -4,6 +4,9 @@ import authorizeRoles from "../../middleware/athorizeRoles.js";
 import {
   getCategoryWiseSales,
   getLastMonthRevenueByWeek,
+  getLastTwoWeekNewCustomer,
+  getLastTwoWeekOrderCount,
+  getLastTwoWeekRevenue,
   getLastWeekRevenueByDay,
   getTopSellingItems,
 } from "./statsController.js";
@@ -36,6 +39,24 @@ restaurnatStat.get(
   authorization,
   authorizeRoles(role),
   getCategoryWiseSales
+);
+restaurnatStat.get(
+  "/last_two_week_revenue",
+  authorization,
+  authorizeRoles(role),
+  getLastTwoWeekRevenue
+);
+restaurnatStat.get(
+  "/last_two_week_order_count",
+  authorization,
+  authorizeRoles(role),
+  getLastTwoWeekOrderCount
+);
+restaurnatStat.get(
+  "/last_two_week_new_customer",
+  authorization,
+  authorizeRoles(role),
+  getLastTwoWeekNewCustomer
 );
 
 export default restaurnatStat;

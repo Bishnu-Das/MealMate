@@ -6,25 +6,34 @@ import { restaurantAuthStore } from "../store/restaurantAuthStore";
 import socketService from "../../services/socketService";
 import toast from "react-hot-toast";
 import { useNotificationStore } from "../../store/notificationStore";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 
 const HeaderRest = ({ onLogout }) => {
   const [showMenu, setShowMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
-  const { notifications, addNotification, clearNotifications } = useNotificationStore();
+  const { notifications, addNotification, clearNotifications } =
+    useNotificationStore();
   const menuRef = useRef();
   const notificationRef = useRef();
+  const navigate = useNavigate();
 
   const { logout, authRestaurant } = restaurantAuthStore();
 
   const handleAcceptOrder = (orderId) => {
     console.log(`Attempting to accept order: ${orderId}`);
-    socketService.emit("accept_order", { orderId, restaurantId: authRestaurant.restaurant_id });
+    socketService.emit("accept_order", {
+      orderId,
+      restaurantId: authRestaurant.restaurant_id,
+    });
     toast.success(`Order #${orderId} accepted!`);
   };
 
   const handleRejectOrder = (orderId) => {
     console.log(`Attempting to reject order: ${orderId}`);
-    socketService.emit("reject_order", { orderId, restaurantId: authRestaurant.restaurant_id });
+    socketService.emit("reject_order", {
+      orderId,
+      restaurantId: authRestaurant.restaurant_id,
+    });
     toast.error(`Order #${orderId} rejected.`);
   };
 
@@ -40,12 +49,11 @@ const HeaderRest = ({ onLogout }) => {
       socketService.on("order_status_updated", (updatedOrder) => {
         // Remove notification if the order was rejected or accepted
         // We don't remove from global state here, as it's handled by clearNotifications
-
       });
 
       socketService.on("order_accepted", ({ orderId, riderProfile }) => {
         console.log(`Order ${orderId} accepted by rider:`, riderProfile);
-        addNotification({ orderId, riderProfile, type: 'order_accepted' });
+        addNotification({ orderId, riderProfile, type: "order_accepted" });
         toast.success(`Order #${orderId} accepted by ${riderProfile.name}!`);
       });
     }
@@ -54,7 +62,10 @@ const HeaderRest = ({ onLogout }) => {
       if (menuRef.current && !menuRef.current.contains(event.target)) {
         setShowMenu(false);
       }
-      if (notificationRef.current && !notificationRef.current.contains(event.target)) {
+      if (
+        notificationRef.current &&
+        !notificationRef.current.contains(event.target)
+      ) {
         setShowNotifications(false);
       }
     }
@@ -99,26 +110,52 @@ const HeaderRest = ({ onLogout }) => {
           </Button>
 
           {showNotifications && (
-            <div className="absolute right-0 top-12 mt-2 w-80 bg-gray-800 text-white rounded-lg shadow-lg border border-gray-700 z-50 animate-fade-in" ref={notificationRef}>
+            <div
+              className="absolute right-0 top-12 mt-2 w-80 bg-gray-800 text-white rounded-lg shadow-lg border border-gray-700 z-50 animate-fade-in"
+              ref={notificationRef}
+            >
               <div className="p-4 border-b border-gray-700">
                 <h3 className="text-lg font-semibold">New Orders</h3>
               </div>
               {notifications.length > 0 ? (
                 <div className="max-h-60 overflow-y-auto">
                   {notifications.map((notif, index) => (
-                    <div key={index} className="p-4 border-b border-gray-700 last:border-b-0">
-                      {notif.type === 'order_accepted' ? (
+                    <div
+                      key={index}
+                      className="p-4 border-b border-gray-700 last:border-b-0"
+                    >
+                      {notif.type === "order_accepted" ? (
                         <p className="font-medium">
-                          Order #{notif.orderId} accepted by {notif.riderProfile.name} ({notif.riderProfile.phone_number})
+                          Order #{notif.orderId} accepted by{" "}
+                          {notif.riderProfile.name} (
+                          {notif.riderProfile.phone_number})
                         </p>
                       ) : (
                         <>
-                          <p className="font-medium">Order #{notif.order_id} from {notif.customer_name}</p>
-                          <p className="text-sm text-gray-400">Total: ${notif.total_amount}</p>
-                          <p className="text-sm text-gray-400">Status: {notif.status.replace(/_/g, " ")}</p>
+                          <p className="font-medium">
+                            Order #{notif.order_id} from {notif.customer_name}
+                          </p>
+                          <p className="text-sm text-gray-400">
+                            Total: ${notif.total_amount}
+                          </p>
+                          <p className="text-sm text-gray-400">
+                            Status: {notif.status.replace(/_/g, " ")}
+                          </p>
                           <div className="flex space-x-2 mt-2">
-                            <Button variant="outline" className="bg-green-500 hover:bg-green-600 text-white text-xs px-3 py-1 h-auto" onClick={() => handleAcceptOrder(notif.order_id)}>Accept</Button>
-                            <Button variant="outline" className="bg-red-500 hover:bg-red-600 text-white text-xs px-3 py-1 h-auto" onClick={() => handleRejectOrder(notif.order_id)}>Reject</Button>
+                            <Button
+                              variant="outline"
+                              className="bg-green-500 hover:bg-green-600 text-white text-xs px-3 py-1 h-auto"
+                              onClick={() => handleAcceptOrder(notif.order_id)}
+                            >
+                              Accept
+                            </Button>
+                            <Button
+                              variant="outline"
+                              className="bg-red-500 hover:bg-red-600 text-white text-xs px-3 py-1 h-auto"
+                              onClick={() => handleRejectOrder(notif.order_id)}
+                            >
+                              Reject
+                            </Button>
                           </div>
                         </>
                       )}
@@ -129,7 +166,11 @@ const HeaderRest = ({ onLogout }) => {
                 <p className="p-4 text-gray-400">No new orders</p>
               )}
               <div className="p-4 border-t border-gray-700">
-                <Button variant="link" className="w-full text-blue-400" onClick={clearNotifications}>
+                <Button
+                  variant="link"
+                  className="w-full text-blue-400"
+                  onClick={clearNotifications}
+                >
                   Clear All
                 </Button>
               </div>
@@ -154,9 +195,9 @@ const HeaderRest = ({ onLogout }) => {
               <div className="absolute right-0 top-12 mt-2 w-40 bg-gray-800 text-white rounded-lg shadow-lg border border-gray-700 z-50 animate-fade-in">
                 <button
                   className="flex items-center w-full px-4 py-2 hover:bg-gray-700 rounded-t-lg"
-                  onClick={() => {
+                  onClick={async () => {
                     setShowMenu(false);
-                    logout();
+                    await logout();
                     if (onLogout) onLogout();
                   }}
                 >
