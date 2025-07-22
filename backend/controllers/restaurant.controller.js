@@ -753,9 +753,61 @@ export const updateOrderStatus = async (req, res) => {
         [orderId]
       );
 
-      // Emit new delivery event to all riders
-      const io = getIO();
-      io.to("riders").emit("new_delivery", order);
+      // Fetch additional order details for the notification, including calculated delivery fee
+      const deliveryDetailsResult = await client.query(
+        `SELECT
+          o.*,
+          r.name as restaurant_name,
+          d.dropoff_addr,
+          (
+            2.0 + -- Base Fee
+            (
+              ST_Distance(
+                ST_MakePoint(rl.longitude, rl.latitude)::geography,
+                ST_MakePoint(d.dropoff_longitude, d.dropoff_latitude)::geography
+              ) / 1000 -- Convert to KM
+            ) * 0.50 -- Rate per KM
+          )::decimal(10, 2) AS delivery_fee
+         FROM orders o
+         JOIN restaurants r ON o.restaurant_id = r.restaurant_id
+         JOIN deliveries d ON o.order_id = d.order_id
+         JOIN user_locations rl ON r.location_id = rl.location_id
+         WHERE o.order_id = $1`,
+        [orderId]
+      );
+
+      if (deliveryDetailsResult.rows.length > 0) {
+        const deliveryDetails = deliveryDetailsResult.rows[0];
+        // Emit new delivery event to all riders
+        const io = getIO();
+        console.log(
+          `Emitting 'new_delivery' to 'riders' room with data:`,
+          deliveryDetails
+        );
+        io.to("riders").emit("new_delivery", deliveryDetails);
+
+        // Store notification for all available riders
+        const availableRiders = await client.query(
+          "SELECT user_id FROM rider_profiles WHERE is_available = true"
+        );
+        for (const rider of availableRiders.rows) {
+          await client.query(
+            "INSERT INTO notifications (user_id, target_type, target_id, order_id, type, message) VALUES ($1, $2, $3, $4, $5, $6)",
+            [
+              order.user_id,
+              "rider",
+              rider.user_id,
+              orderId,
+              "delivery_status",
+              `A new delivery is available from ${deliveryDetails.restaurant_name}.`,
+            ]
+          );
+        }
+      } else {
+        console.error(
+          `Could not fetch delivery details for order ${orderId}. Notification to riders not sent.`
+        );
+      }
     }
 
     await client.query("COMMIT");

@@ -16,7 +16,7 @@ export const initSocket = (server) => {
 
     socket.on('join_room', (room) => {
       socket.join(room);
-      console.log(`Socket ${socket.id} joined room ${room}. Current rooms:`, Array.from(socket.rooms));
+      console.log(`Socket ${socket.id} joined room ${room}.`);
     });
 
     // Register restaurant-specific socket event handlers

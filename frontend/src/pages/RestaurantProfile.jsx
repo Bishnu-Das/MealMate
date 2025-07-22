@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { Search } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -16,11 +16,14 @@ import Navbar from "../Components/skeleton/Navbar";
 export default function Restaurant() {
   const [activeCategory, setActiveCategory] = useState("Popular");
   const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   const { cartItems, addToCart, updateQuantity, removeFromCart, clearCart } = useCartStore();
   const { authUser } = userAuthStore();
   const navigate = useNavigate();
   const [darkMode, setDarkMode] = useState(false);
   const [menuItems, setmenuItems] = useState([]);
+  const menuItemsRef = useRef(null);
   const [menuCategories, setMenuCategories] = useState([]);
   const [restaurant, setRestaurant] = useState();
 
@@ -83,6 +86,21 @@ export default function Restaurant() {
         return 0;
     }
   });
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filters, searchQuery]);
+
+  const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const currentItems = filteredItems.slice(startIndex, startIndex + itemsPerPage);
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+    if (menuItemsRef.current) {
+      menuItemsRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
 
   useEffect(() => {
     if (!authUser) {
@@ -173,49 +191,99 @@ export default function Restaurant() {
           <FoodFilter menuCategories={menuCategories} onFilterChange={setFilters} />
         </div>
 
-        {/* Menu Items */}
-        <div className="container mx-auto px-6 pb-12">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 border border-gray-200 dark:border-gray-700">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-8 text-center">
-              {activeCategory === "Popular" ? "Popular Dishes" : `${activeCategory} Menu`}
-            </h2>
-            <div className="space-y-6">
-              {filteredItems.length === 0 ? (
-                <div className="text-center py-16">
-                  <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full mb-4">
-                    <Search className="w-8 h-8 text-gray-400 dark:text-gray-500" />
-                  </div>
-                  <p className="text-lg text-gray-500 dark:text-gray-400 font-medium">
-                    No items found matching your search.
-                  </p>
-                  <p className="text-sm text-gray-400 dark:text-gray-500 mt-2">
-                    Try searching with different keywords or browse our categories.
-                  </p>
-                </div>
-              ) : (
-                <div className="grid gap-6">
-                  {filteredItems.map((item) => (
-                    <div key={item.menu_item_id} className="bg-gradient-to-r from-white to-gray-50 dark:from-gray-700 dark:to-gray-800 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 border border-gray-200 dark:border-gray-600">
-                      <FoodItem
-                    key={item.menu_item_id}
-                    item={item}
-                    onAddToCart={handleAddToCart}
-                    cartItems={cartItems}
-                  />
+        <div className="flex flex-col lg:flex-row container mx-auto px-6 pb-12 gap-6">
+          <div className="flex-grow">
+            {/* Menu Items */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 border border-gray-200 dark:border-gray-700" ref={menuItemsRef}>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-8 text-center">
+                {activeCategory === "Popular" ? "Popular Dishes" : `${activeCategory} Menu`}
+              </h2>
+              <div className="space-y-6">
+                {filteredItems.length === 0 ? (
+                  <div className="text-center py-16">
+                    <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full mb-4">
+                      <Search className="w-8 h-8 text-gray-400 dark:text-gray-500" />
                     </div>
-                  ))}
-                </div>
-              )}
+                    <p className="text-lg text-gray-500 dark:text-gray-400 font-medium">
+                      No items found matching your search.
+                    </p>
+                    <p className="text-sm text-gray-400 dark:text-gray-500 mt-2">
+                      Try searching with different keywords or browse our categories.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid gap-6">
+                    {currentItems.map((item) => (
+                      <div key={item.menu_item_id} className="bg-gradient-to-r from-white to-gray-50 dark:from-gray-700 dark:to-gray-800 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 border border-gray-200 dark:border-gray-600">
+                        <FoodItem
+                          key={item.menu_item_id}
+                          item={item}
+                          onAddToCart={handleAddToCart}
+                          cartItems={cartItems}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="mt-12 flex justify-center items-center space-x-2">
+                <button
+                  onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
+                  disabled={currentPage === 1}
+                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                    currentPage === 1
+                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                      : 'bg-white text-gray-700 hover:bg-gray-50 shadow-sm'
+                  }`}
+                >
+                  Previous
+                </button>
+                
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                  <button
+                    key={page}
+                    onClick={() => handlePageChange(page)}
+                    className={`w-10 h-10 rounded-lg font-medium transition-colors ${
+                      currentPage === page
+                        ? 'bg-pink-500 text-white shadow-lg'
+                        : 'bg-white text-gray-700 hover:bg-gray-50 shadow-sm'
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ))}
+                
+                <button
+                  onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
+                  disabled={currentPage === totalPages}
+                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                    currentPage === totalPages
+                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                      : 'bg-white text-gray-700 hover:bg-gray-50 shadow-sm'
+                  }`}
+                >
+                  Next
+                </button>
+              </div>
+            )}
+
+            {/* Results Info */}
+            <div className="mt-6 text-center text-gray-600">
+              Showing {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredItems.length)} of {filteredItems.length} items
             </div>
           </div>
-        </div>
 
-        {/* Cart Sidebar */}
-        <CartSidebar
-          cartItems={cartItems}
-          onUpdateQuantity={handleUpdateQuantity}
-          onRemoveItem={handleRemoveItem}
-        />
+          {/* Cart Sidebar */}
+          <CartSidebar
+            cartItems={cartItems}
+            onUpdateQuantity={handleUpdateQuantity}
+            onRemoveItem={handleRemoveItem}
+          />
+        </div>
       </div>
     </div>
   );

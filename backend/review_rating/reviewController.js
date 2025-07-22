@@ -74,3 +74,33 @@ export const getRestaurantReviews = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+
+export const getRiderReviews = async (req, res) => {
+  const riderId = req.user.id;
+
+  try {
+    const reviewsResult = await pool.query(
+      `SELECT r.rating, r.comment, r.created_at, u.name as user_name
+       FROM reviews r
+       JOIN users u ON r.user_id = u.user_id
+       WHERE r.rider_id = $1
+       ORDER BY r.created_at DESC`,
+      [riderId]
+    );
+
+    const ratingResult = await pool.query(
+      'SELECT AVG(rating) as average_rating FROM reviews WHERE rider_id = $1',
+      [riderId]
+    );
+
+    const averageRating = ratingResult.rows[0].average_rating ? parseFloat(ratingResult.rows[0].average_rating).toFixed(2) : null;
+
+    res.status(200).json({
+      reviews: reviewsResult.rows,
+      averageRating: averageRating
+    });
+  } catch (error) {
+    console.error('Error fetching rider reviews and rating:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};

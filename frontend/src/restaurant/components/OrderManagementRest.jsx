@@ -39,8 +39,6 @@ function getNextStatus(currentStatus) {
       return "preparing";
     case "preparing":
       return "ready_for_pickup";
-    case "ready_for_pickup":
-      return "out_for_delivery";
     default:
       return currentStatus;
   }
@@ -53,9 +51,9 @@ function getStatusLabel(status) {
     case "preparing":
       return "Mark Ready for Pickup";
     case "ready_for_pickup":
-      return "Mark Out for Delivery";
+      return "Awaiting Rider Pickup";
     case "out_for_delivery":
-      return "Mark as Delivered";
+      return "Out for Delivery";
     default:
       return "Update Status";
   }
@@ -209,13 +207,6 @@ function OrderManagement() {
         await axios.put(`/api/restaurant/orders/${orderId}/status`, {
           status: newStatus,
         });
-
-        if (newStatus === "ready_for_pickup") {
-          socketService.emit("order_ready_for_pickup", {
-            order_id: orderId,
-            restaurant_id: restaurant.restaurant_id,
-          });
-        }
       } catch (error) {
         console.error("Error updating order status:", error);
         fetchOrders();

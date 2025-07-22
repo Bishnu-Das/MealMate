@@ -53,8 +53,8 @@ CREATE TABLE rider_profiles (
 -- ENUMS
 CREATE TYPE weekday AS ENUM ('Sun','Mon','Tue','Wed','Thu','Fri','Sat');
 CREATE TYPE cart_status AS ENUM ('active', 'abandoned', 'completed');
-CREATE TYPE order_status AS ENUM ('pending_restaurant_acceptance', 'restaurant_rejected', 'preparing', 'ready_for_pickup', 'out_for_delivery', 'delivered', 'cancelled');
-CREATE TYPE payment_method AS ENUM ('cod', 'bkash', 'nagad');
+CREATE TYPE order_status AS ENUM ('pending_payment', 'pending_restaurant_acceptance', 'restaurant_rejected', 'preparing', 'ready_for_pickup', 'out_for_delivery', 'delivered', 'cancelled');
+CREATE TYPE payment_method AS ENUM ('cod', 'sslcommerz');
 CREATE TYPE delivery_status AS ENUM ('awaiting_restaurant', 'pending','in_transit','delivered');
 CREATE TYPE notification_target AS ENUM ('user','rider','restaurant');
 CREATE TYPE notification_type AS ENUM ('order_update','promotion','delivery_status');
@@ -118,6 +118,7 @@ CREATE TABLE orders (
   delivered_at TIMESTAMP,
   total_amount DECIMAL(10,2),
   cart_id INT REFERENCES carts(cart_id)
+  tran_id VARCHAR(255) UNIQUE
 );
 
 CREATE TABLE order_items (
@@ -137,6 +138,7 @@ CREATE TABLE payments (
   amount DECIMAL(10,2),
   status VARCHAR(20),
   transaction_id VARCHAR(255),
+  tran_id VARCHAR(255) UNIQUE,
   paid_at TIMESTAMP
 );
 

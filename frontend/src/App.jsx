@@ -18,6 +18,7 @@ import HomepageRider from "./rider/pages/HomepageRider";
 import DeliveryHistoryPage from "./rider/pages/DeliveryHistoryPage";
 import OrderDetailsPage from "./rider/pages/OrderDetailsPage";
 import ProfilePageRider from "./rider/pages/ProfilePageRider";
+import EarningsPage from "./rider/pages/EarningsPage";
 
 import OrderHistoryPage from "./pages/OrderHistoryPage";
 
@@ -106,7 +107,7 @@ function App() {
         {/* <Navbar /> */}
         <Routes>
           {/* Customer */}
-          <Route path="/" element={<HomePage />} />
+          <Route path="/" element={authrider ? <Navigate to="/rider" /> : authRestaurant ? <Navigate to="/partner" /> : <HomePage />} />
           <Route
             path="/login"
             element={!authUser ? <LoginPage /> : <Navigate to="/" />}
@@ -173,6 +174,10 @@ function App() {
           <Route
             path="/rider/data/orders/:orderId"
             element={authrider ? <OrderDetailsPage /> : <Navigate to="/rider/login" />}
+          />
+          <Route
+            path="/rider/earnings"
+            element={authrider ? <EarningsPage /> : <Navigate to="/rider/login" />}
           />
         </Routes>
         {authUser && <ChatButton onClick={() => openChat()} />}

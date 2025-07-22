@@ -1,161 +1,170 @@
-import pool from "../../db.js";
-import axios from 'axios';
+import SSLCommerzPayment from 'sslcommerz-lts';
+import pool from '../../db.js';
+import { createOrderFromCart } from '../order/orderController.js';
 
-// Base URL for SSLCommerz API
-const SSL_COMMERZ_API_BASE_URL_LIVE = 'https://securepay.sslcommerz.com';
-const SSL_COMMERZ_API_BASE_URL_SANDBOX = 'https://sandbox.sslcommerz.com';
+const is_live = process.env.SSL_COMMERZ_IS_LIVE === 'true';
 
 export const initiatePayment = async (req, res, store_id, store_passwd) => {
+  const { cartItems, customerInfo, total_amount, paymentMethod } = req.body; // Added paymentMethod
+  const userId = req.user.id;
+  const tran_id = `TXN_${Date.now()}_${userId}`;
+
+  const client = await pool.connect();
+
   try {
-    console.log('Initiating payment with store_id:', store_id, 'and store_passwd:', store_passwd);
-    const is_live = process.env.SSL_COMMERZ_IS_LIVE === 'true';
-    const SSL_COMMERZ_API_BASE_URL = is_live ? SSL_COMMERZ_API_BASE_URL_LIVE : SSL_COMMERZ_API_BASE_URL_SANDBOX;
-    // Use v3 endpoint for sandbox as per guide
-    const apiEndpoint = is_live
-      ? `${SSL_COMMERZ_API_BASE_URL}/gwprocess/v4/api.php`
-      : `${SSL_COMMERZ_API_BASE_URL}/gwprocess/v3/api.php`;
+    await client.query('BEGIN');
 
-  const { cartItems = [], customerInfo = {}, total_amount, tran_id } = req.body;
-  const user_id = req.user?.id || 'unknown';
+    // 1. Create the order with a 'pending_payment' status
+    const createdOrders = await createOrderFromCart(userId, cartItems, client, tran_id, 'pending_payment');
 
-  // Ensure all customer info fields are present and valid
-  const cus_name = customerInfo.name || 'Test User';
-  const cus_email = customerInfo.email || 'test@example.com';
-  const cus_add1 = customerInfo.address || 'Dhaka';
-  const cus_add2 = customerInfo.address2 || 'Dhaka';
-  const cus_city = customerInfo.city || 'Dhaka';
-  const cus_state = customerInfo.state || 'Dhaka';
-  const cus_postcode = customerInfo.postcode || '1000';
-  const cus_country = customerInfo.country || 'Bangladesh';
-  const cus_phone = customerInfo.phone || '01700000000';
-  const cus_fax = customerInfo.fax || '01700000001';
-
-  // Shipping information
-  const ship_name = customerInfo.ship_name || cus_name;
-  const ship_add1 = customerInfo.ship_add1 || cus_add1;
-  const ship_add2 = customerInfo.ship_add2 || cus_add2;
-  const ship_city = customerInfo.ship_city || cus_city;
-  const ship_state = customerInfo.ship_state || cus_state;
-  const ship_postcode = customerInfo.ship_postcode || cus_postcode;
-  const ship_country = customerInfo.ship_country || cus_country;
-
-  // Fallbacks for URLs
-  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-  const backendUrl = process.env.BACKEND_URL || 'http://localhost:5001';
-
-  // Ensure total_amount is a valid positive number
-  const validAmount = typeof total_amount === 'number' && total_amount > 0 ? total_amount : 1.00;
-
-  // Ensure tran_id is unique (add timestamp if not present)
-  const validTranId = tran_id || `TXN_${Date.now()}`;
-
-  const data = {
-    store_id: store_id,
-    store_passwd: store_passwd,
-    total_amount: parseFloat(validAmount),
-    currency: 'BDT',
-    tran_id: validTranId,
-    success_url: `${frontendUrl}/payment-success?tran_id=${validTranId}`,
-    fail_url: `${frontendUrl}/payment-fail?tran_id=${validTranId}`,
-    cancel_url: `${frontendUrl}/payment-cancel?tran_id=${validTranId}`,
-    ipn_url: `${backendUrl}/api/customer/payment/ipn`,
-    product_name: 'Food Order',
-    product_category: 'Food',
-    product_profile: 'general',
-    cus_name,
-    cus_email,
-    cus_add1,
-    cus_add2,
-    cus_city,
-    cus_state,
-    cus_postcode,
-    cus_country,
-    cus_phone,
-    cus_fax,
-    ship_name,
-    ship_add1,
-    ship_add2,
-    ship_city,
-    ship_state,
-    ship_postcode,
-    ship_country,
-    multi_card_name: 'mastercard,visacard,amexcard',
-    value_a: 'ref001_A',
-    value_b: 'ref002_B',
-    value_c: 'ref003_C',
-    value_d: 'ref004_D',
-    shipping_method: 'NO',
-    num_of_item: cartItems.length,
-  };
-
-    const response = await axios.post(apiEndpoint, data);
-
-    if (response.data.status === 'SUCCESS') {
-      res.status(200).json({ paymentUrl: response.data.GatewayPageURL });
-    } else {
-      console.error('SSLCommerz initiation failed:', response.data);
-      res.status(400).json({ message: 'Payment initiation failed', details: response.data });
+    // 2. Create a corresponding payment record
+    for (const order of createdOrders) {
+      await client.query(
+        'INSERT INTO payments (order_id, user_id, method_type, amount, status, tran_id) VALUES ($1, $2, $3, $4, $5, $6)',
+        [order.order_id, userId, paymentMethod, order.total_amount, 'pending', tran_id] // Used paymentMethod here
+      );
     }
+
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const backendUrl = process.env.BACKEND_URL || 'http://localhost:5001';
+
+    console.log('DEBUG: process.env.FRONTEND_URL =', process.env.FRONTEND_URL);
+    console.log('DEBUG: frontendUrl (resolved) =', frontendUrl);
+
+    const data = {
+        total_amount: total_amount,
+        currency: 'BDT',
+        tran_id: tran_id, // use unique tran_id for each api call
+        success_url: `${backendUrl}/api/customer/payment/success?tran_id=${tran_id}`,
+        fail_url: `${backendUrl}/api/customer/payment/fail?tran_id=${tran_id}`,
+        cancel_url: `${backendUrl}/api/customer/payment/cancel?tran_id=${tran_id}`,
+        ipn_url: `${backendUrl}/api/customer/payment/ipn`,
+        shipping_method: 'Courier',
+        product_name: 'Food Order',
+        product_category: 'Food',
+        product_profile: 'general',
+        cus_name: customerInfo.name,
+        cus_email: customerInfo.email,
+        cus_add1: customerInfo.address,
+        cus_add2: 'N/A',
+        cus_city: 'N/A',
+        cus_state: 'N/A',
+        cus_postcode: 'N/A',
+        cus_country: 'Bangladesh',
+        cus_phone: customerInfo.phone,
+        cus_fax: 'N/A',
+        ship_name: customerInfo.name,
+        ship_add1: customerInfo.address,
+        ship_add2: 'N/A',
+        ship_city: 'N/A',
+        ship_state: 'N/A',
+        ship_postcode: 'N/A',
+        ship_country: 'Bangladesh',
+    };
+
+    console.log('DEBUG: success_url sent to SSLCommerz =', data.success_url);
+
+    const sslcz = new SSLCommerzPayment(store_id, store_passwd, is_live)
+    const apiResponse = await sslcz.init(data);
+
+    if (apiResponse.status === 'SUCCESS') {
+        await client.query('COMMIT');
+        res.status(200).json({ paymentUrl: apiResponse.GatewayPageURL });
+    } else {
+        await client.query('ROLLBACK');
+        console.error('SSLCommerz initiation failed:', apiResponse);
+        res.status(400).json({ message: 'Payment initiation failed', details: apiResponse });
+    }
+
   } catch (error) {
+    await client.query('ROLLBACK');
     console.error('Error initiating SSLCommerz payment:', error.message);
     res.status(500).json({ message: 'Internal server error', error: error.message });
+  } finally {
+    client.release();
   }
 };
 
-export const handleIPN = async (req, res) => {
-  try {
-    const ipnData = req.body;
-    console.log('Received IPN:', ipnData);
 
-    // **IMPORTANT: IPN Validation**
-    // You MUST validate the IPN request to ensure it's from SSLCommerz and not tampered with.
-    // This typically involves:
-    // 1. Verifying the IPN hash/signature (if provided by SSLCommerz).
-    // 2. Making a server-to-server validation call to SSLCommerz using the transaction ID.
-    //    Example (conceptual, refer to SSLCommerz docs for exact implementation):
-    /*
-    const validationResponse = await axios.post(`${SSL_COMMERZ_API_BASE_URL}/validator/api/validationserver.php`, {
-        val_id: ipnData.val_id, // Validation ID from IPN
-        store_id: store_id,
-        store_passwd: store_passwd,
-    });
-    if (validationResponse.data.status !== 'VALID') {
-        return res.status(401).send('IPN validation failed');
-    }
-    */
-
-    const { tran_id, status, amount, currency, val_id } = ipnData;
-
-    // Update your order status in the database based on tran_id and status
-    // Example:
-    /*
-    await pool.query(
-      'UPDATE orders SET payment_status = $1, transaction_id = $2 WHERE tran_id = $3',
-      [status, val_id, tran_id]
-    );
-    */
-
-    res.status(200).send('IPN received and processed');
-  } catch (error) {
-    console.error('Error processing IPN:', error.message);
-    res.status(500).send('Error processing IPN');
-  }
-};
-
-// These are simple redirect handlers. SSLCommerz will redirect the user's browser to these.
-// They typically just redirect the user to a frontend page.
+// --- CLEANED: TESTING-ONLY REDIRECT HANDLERS (ONE DEFINITION EACH) ---
 export const handleSuccess = async (req, res) => {
   const { tran_id } = req.query;
-  // You might fetch order details here and pass them to the frontend
-  res.redirect(`${process.env.FRONTEND_URL}/payment-success?tran_id=${tran_id}`);
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query(
+      'UPDATE payments SET status = $1 WHERE tran_id = $2',
+      ['completed', tran_id]
+    );
+    await client.query(
+      'UPDATE orders SET status = $1 WHERE tran_id = $2',
+      ['pending_restaurant_acceptance', tran_id]
+    );
+    await client.query('COMMIT');
+    const redirectUrl = `${process.env.FRONTEND_URL}/payment-success?tran_id=${tran_id}`;
+    console.log('DEBUG: Redirecting to:', redirectUrl);
+    res.redirect(redirectUrl);
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Error handling success redirect:', error.message, error.stack);
+    res.redirect(`${process.env.FRONTEND_URL}/payment-fail?tran_id=${tran_id}`);
+  } finally {
+    client.release();
+  }
 };
 
 export const handleFail = async (req, res) => {
   const { tran_id } = req.query;
-  res.redirect(`${process.env.FRONTEND_URL}/payment-fail?tran_id=${tran_id}`);
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query(
+      'UPDATE payments SET status = $1 WHERE tran_id = $2',
+      ['failed', tran_id]
+    );
+    await client.query(
+      'UPDATE orders SET status = $1 WHERE tran_id = $2',
+      ['cancelled', tran_id]
+    );
+    await client.query('COMMIT');
+    res.redirect(`${process.env.FRONTEND_URL}/payment-fail?tran_id=${tran_id}`);
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Error handling fail redirect:', error.message, error.stack);
+    res.redirect(`${process.env.FRONTEND_URL}/payment-fail?tran_id=${tran_id}`);
+  } finally {
+    client.release();
+  }
 };
 
 export const handleCancel = async (req, res) => {
   const { tran_id } = req.query;
-  res.redirect(`${process.env.FRONTEND_URL}/payment-cancel?tran_id=${tran_id}`);
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query(
+      'UPDATE payments SET status = $1 WHERE tran_id = $2',
+      ['cancelled', tran_id]
+    );
+    await client.query(
+      'UPDATE orders SET status = $1 WHERE tran_id = $2',
+      ['cancelled', tran_id]
+    );
+    await client.query('COMMIT');
+    res.redirect(`${process.env.FRONTEND_URL}/payment-cancel?tran_id=${tran_id}`);
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Error handling cancel redirect:', error.message, error.stack);
+    res.redirect(`${process.env.FRONTEND_URL}/payment-cancel?tran_id=${tran_id}`);
+  } finally {
+    client.release();
+  }
+};
+
+export const handleIPN = async (req, res, store_id, store_passwd) => {
+    // This IPN handler is currently a placeholder for testing purposes.
+    // In a production environment, this function would contain robust validation
+    // and database update logic, as it is the most secure way to confirm payments.
+    console.log('Received IPN (placeholder):', req.body);
+    res.status(200).send('IPN received (placeholder)');
 };

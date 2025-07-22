@@ -1,5 +1,5 @@
 import pool from "../db.js";
-import { io } from '../index.js';
+import { getIO } from '../socket.js';
 
 export const getDashboardData = async (req, res) => {
   try {
@@ -9,7 +9,7 @@ export const getDashboardData = async (req, res) => {
       return res.status(400).json({ message: "Rider ID not found in request." });
     }
 
-    // Fetch available orders (status = 'pending')
+    // Fetch available orders (status = 'pending') and calculate delivery fee
     const availableOrders = await pool.query(
       `SELECT
         o.order_id,
@@ -22,16 +22,26 @@ export const getDashboardData = async (req, res) => {
         cu.phone_number AS customer_phone,
         d.dropoff_addr,
         d.dropoff_latitude,
-        d.dropoff_longitude
+        d.dropoff_longitude,
+        (
+          2.0 + -- Base Fee
+          (
+            ST_Distance(
+              ST_MakePoint(rl.longitude, rl.latitude)::geography,
+              ST_MakePoint(d.dropoff_longitude, d.dropoff_latitude)::geography
+            ) / 1000 -- Convert to KM
+          ) * 0.50 -- Rate per KM
+        )::decimal(10, 2) AS delivery_fee
       FROM orders o
       JOIN restaurants r ON o.restaurant_id = r.restaurant_id
+      JOIN user_locations rl ON r.location_id = rl.location_id
       JOIN users cu ON o.user_id = cu.user_id
       JOIN deliveries d ON o.order_id = d.order_id
       WHERE d.status = 'pending'`
     );
 
     // Fetch assigned order with detailed information
-    const assignedOrderResult = await pool.query(
+    const assignedOrdersResult = await pool.query(
       `SELECT
         o.order_id,
         o.status AS order_status,
@@ -52,7 +62,7 @@ export const getDashboardData = async (req, res) => {
       [riderId]
     );
 
-    const assignedOrder = assignedOrderResult.rows[0] || null;
+    const assignedOrders = assignedOrdersResult.rows;
 
     // Fetch rider's availability
     const riderProfile = await pool.query(
@@ -62,7 +72,7 @@ export const getDashboardData = async (req, res) => {
 
     res.status(200).json({
       availableOrders: availableOrders.rows,
-      assignedOrder: assignedOrder,
+      assignedOrders: assignedOrders,
       isAvailable: riderProfile.rows[0]?.is_available,
     });
   } catch (err) {
@@ -177,14 +187,7 @@ export const acceptOrder = async (req, res) => {
     const riderId = req.user.id;
 
     // Check if the rider already has an active order (status 'preparing' or 'out_for_delivery')
-    const activeOrderCheck = await pool.query(
-      "SELECT order_id FROM orders WHERE rider_id = $1 AND status IN ('preparing', 'ready_for_pickup', 'out_for_delivery')",
-      [riderId]
-    );
-
-    if (activeOrderCheck.rows.length > 0) {
-      return res.status(400).json({ message: "You already have an active order. Please complete it before accepting a new one." });
-    }
+    
 
     const updatedOrder = await pool.query(
       "UPDATE orders SET rider_id = $1, status = 'out_for_delivery' WHERE order_id = $2 AND status = 'ready_for_pickup' RETURNING *",
@@ -196,7 +199,7 @@ export const acceptOrder = async (req, res) => {
     }
 
     await pool.query(
-      "UPDATE deliveries SET status = 'in_transit' WHERE order_id = $1",
+      "UPDATE deliveries SET status = 'in_transit', start_time = NOW() WHERE order_id = $1",
       [orderId]
     );
 
@@ -215,8 +218,21 @@ export const acceptOrder = async (req, res) => {
     const { user_id: customerId, restaurant_id: restaurantId } = orderDetailsResult.rows[0];
 
     // Emit order accepted event to restaurant and customer
+    const io = getIO();
     io.to(`restaurant_${restaurantId}`).emit('order_accepted', { orderId, riderProfile });
     io.to(`customer_${customerId}`).emit('order_accepted', { orderId, riderProfile });
+
+    // Store notification for the restaurant
+    await pool.query(
+      'INSERT INTO notifications (user_id, target_type, target_id, order_id, type, message) VALUES ($1, $2, $3, $4, $5, $6)',
+      [riderId, 'restaurant', restaurantId, orderId, 'delivery_status', `Rider ${riderProfile.name} has accepted order #${orderId}.`]
+    );
+
+    // Store notification for the customer
+    await pool.query(
+      'INSERT INTO notifications (user_id, target_type, target_id, order_id, type, message) VALUES ($1, $2, $3, $4, $5, $6)',
+      [riderId, 'user', customerId, orderId, 'delivery_status', `Your order #${orderId} has been accepted by rider ${riderProfile.name}.`]
+    );
 
     res.status(200).json({ message: "Order accepted successfully", order: updatedOrder.rows[0] });
   } catch (err) {
@@ -230,10 +246,23 @@ export const updateOrderStatus = async (req, res) => {
     const { orderId } = req.params;
     const { status } = req.body;
 
-    const updatedOrder = await pool.query(
-      "UPDATE orders SET status = $1 WHERE order_id = $2 RETURNING *",
-      [status, orderId]
-    );
+    let updatedOrder;
+
+    if (status === 'delivered') {
+      updatedOrder = await pool.query(
+        "UPDATE orders SET status = $1, delivered_at = NOW() WHERE order_id = $2 RETURNING *",
+        [status, orderId]
+      );
+      await pool.query(
+        "UPDATE deliveries SET status = 'delivered', end_time = NOW() WHERE order_id = $1",
+        [orderId]
+      );
+    } else {
+      updatedOrder = await pool.query(
+        "UPDATE orders SET status = $1 WHERE order_id = $2 RETURNING *",
+        [status, orderId]
+      );
+    }
 
     if (updatedOrder.rows.length === 0) {
       return res.status(404).json({ message: "Order not found" });
@@ -296,6 +325,80 @@ export const getOrderDetails = async (req, res) => {
     res.status(200).json({ order: orderResult.rows[0] });
   } catch (err) {
     console.error("Error fetching single order details:", err.message);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const getEarnings = async (req, res) => {
+  try {
+    const riderId = req.user.id;
+
+    // Weekly Earnings
+    const weeklyEarnings = await pool.query(
+      `SELECT 
+        TO_CHAR(DATE_TRUNC('day', o.delivered_at), 'Day') AS day,
+        SUM(2.0 + (ST_Distance(ST_MakePoint(rl.longitude, rl.latitude)::geography, ST_MakePoint(d.dropoff_longitude, d.dropoff_latitude)::geography) / 1000) * 0.50) AS earnings,
+        COUNT(o.order_id) AS orders,
+        COALESCE(SUM(EXTRACT(EPOCH FROM (d.end_time - d.start_time))/3600), 0) AS hours
+      FROM orders o
+      JOIN deliveries d ON o.order_id = d.order_id
+      JOIN restaurants r ON o.restaurant_id = r.restaurant_id
+      JOIN user_locations rl ON r.location_id = rl.location_id
+      WHERE o.rider_id = $1 AND o.delivered_at >= NOW() - INTERVAL '7 days'
+      GROUP BY DATE_TRUNC('day', o.delivered_at)
+      ORDER BY DATE_TRUNC('day', o.delivered_at);`,
+      [riderId]
+    );
+
+    // Monthly Earnings
+    const monthlyEarnings = await pool.query(
+      `SELECT 
+        TO_CHAR(DATE_TRUNC('month', o.delivered_at), 'Month') AS month,
+        SUM(2.0 + (ST_Distance(ST_MakePoint(rl.longitude, rl.latitude)::geography, ST_MakePoint(d.dropoff_longitude, d.dropoff_latitude)::geography) / 1000) * 0.50) AS earnings,
+        COUNT(o.order_id) AS orders,
+        AVG(rev.rating) AS avg_rating
+      FROM orders o
+      JOIN deliveries d ON o.order_id = d.order_id
+      JOIN restaurants r ON o.restaurant_id = r.restaurant_id
+      JOIN user_locations rl ON r.location_id = rl.location_id
+      LEFT JOIN reviews rev ON o.order_id = rev.order_id AND rev.rider_id = o.rider_id
+      WHERE o.rider_id = $1 AND o.delivered_at >= NOW() - INTERVAL '12 months'
+      GROUP BY DATE_TRUNC('month', o.delivered_at)
+      ORDER BY DATE_TRUNC('month', o.delivered_at);`,
+      [riderId]
+    );
+
+    // Peak Hours Data
+    const peakHoursData = await pool.query(
+      `SELECT
+        CASE
+          WHEN EXTRACT(HOUR FROM o.delivered_at) >= 6 AND EXTRACT(HOUR FROM o.delivered_at) < 9 THEN '6-9 AM'
+          WHEN EXTRACT(HOUR FROM o.delivered_at) >= 9 AND EXTRACT(HOUR FROM o.delivered_at) < 12 THEN '9-12 PM'
+          WHEN EXTRACT(HOUR FROM o.delivered_at) >= 12 AND EXTRACT(HOUR FROM o.delivered_at) < 15 THEN '12-3 PM'
+          WHEN EXTRACT(HOUR FROM o.delivered_at) >= 15 AND EXTRACT(HOUR FROM o.delivered_at) < 18 THEN '3-6 PM'
+          WHEN EXTRACT(HOUR FROM o.delivered_at) >= 18 AND EXTRACT(HOUR FROM o.delivered_at) < 21 THEN '6-9 PM'
+          WHEN EXTRACT(HOUR FROM o.delivered_at) >= 21 AND EXTRACT(HOUR FROM o.delivered_at) < 24 THEN '9-12 AM'
+          ELSE 'Other'
+        END AS time_slot,
+        COUNT(o.order_id) AS orders,
+        SUM(2.0 + (ST_Distance(ST_MakePoint(rl.longitude, rl.latitude)::geography, ST_MakePoint(d.dropoff_longitude, d.dropoff_latitude)::geography) / 1000) * 0.50) AS earnings
+      FROM orders o
+      JOIN deliveries d ON o.order_id = d.order_id
+      JOIN restaurants r ON o.restaurant_id = r.restaurant_id
+      JOIN user_locations rl ON r.location_id = rl.location_id
+      WHERE o.rider_id = $1 AND o.delivered_at >= NOW() - INTERVAL '7 days'
+      GROUP BY time_slot
+      ORDER BY time_slot;`,
+      [riderId]
+    );
+
+    res.status(200).json({
+      weekly: weeklyEarnings.rows,
+      monthly: monthlyEarnings.rows,
+      peakHours: peakHoursData.rows,
+    });
+  } catch (err) {
+    console.error("Error fetching earnings data:", err.message);
     res.status(500).json({ message: "Server error" });
   }
 };
