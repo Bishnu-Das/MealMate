@@ -498,3 +498,5 @@ EXECUTE FUNCTION archive_deleted_menu_item();
 --   status message_status_enum DEFAULT 'sent'
 -- );
 -- CREATE INDEX idx_chat_messages_chat_sender ON chat_messages(chat_id, sender_id);
+
+

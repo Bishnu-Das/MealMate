@@ -693,18 +693,32 @@ export const get_orders = async (req, res) => {
         o.rider_id,
         r.name AS rider_name,
         r.phone_number AS rider_phone,
-        JSON_AGG(oi.*) AS items
+        JSON_AGG(
+          json_build_object(
+          'order_id', oi.order_id,
+      'quantity', oi.quantity,
+      'menu_item_id', mi.menu_item_id,
+      'name', mi.name,
+      'price', mi.price,
+      'menu_item_image_url',mi.menu_item_image_url
+          
+          )
+        
+        ) AS items
       FROM orders o
       JOIN users u ON o.user_id = u.user_id
       LEFT JOIN users r ON o.rider_id = r.user_id
       LEFT JOIN deliveries d ON o.order_id = d.order_id
       LEFT JOIN payments p ON o.order_id = p.order_id
       JOIN order_items oi ON o.order_id = oi.order_id
+      JOIN menu_items mi ON mi.menu_item_id = oi.menu_item_id
       WHERE o.restaurant_id = $1
       GROUP BY o.order_id, u.name, u.phone_number, r.name, r.phone_number, d.dropoff_addr, p.method_type
       ORDER BY o.created_at DESC`,
       [restaurant_id]
     );
+    //  JSON_AGG(oi.*) AS items
+    console.log(orders.rows);
     res.status(200).json(orders.rows);
   } catch (err) {
     console.error("Error in get_orders controller:", err.message);
@@ -771,10 +785,11 @@ export const updateOrderStatus = async (req, res) => {
          FROM orders o
          JOIN restaurants r ON o.restaurant_id = r.restaurant_id
          JOIN deliveries d ON o.order_id = d.order_id
-         JOIN user_locations rl ON r.location_id = rl.location_id
+         JOIN user_locations rl on rl.restaurant_id = r.restaurant_id
          WHERE o.order_id = $1`,
         [orderId]
       );
+      //JOIN user_locations rl ON r.location_id = rl.location_id
 
       if (deliveryDetailsResult.rows.length > 0) {
         const deliveryDetails = deliveryDetailsResult.rows[0];

@@ -31,7 +31,7 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(
   cors({
-    origin: "http://localhost:5173", // Change this to your frontend's address
+    origin: ["http://localhost:5173", "http://192.168.0.101:5173"], // Change this to your frontend's address
     credentials: true,
   })
 );

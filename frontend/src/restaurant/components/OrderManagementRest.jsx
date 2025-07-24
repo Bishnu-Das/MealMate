@@ -136,7 +136,7 @@ function OrderCard({ order, onUpdateStatus, onRejectOrder }) {
                   className="flex justify-between text-sm text-gray-200"
                 >
                   <span>
-                    {item.quantity}x {item.menu_item_name}
+                    {item.quantity}x {item.name}
                   </span>
                   <span>
                     ${(parseFloat(item.price) * item.quantity).toFixed(2)}
@@ -190,6 +190,7 @@ function OrderManagement() {
     try {
       const response = await axios.get("/api/restaurant/orders");
       setOrderList(response.data);
+      console.log(response.data);
     } catch (error) {
       console.error("Error fetching orders:", error);
       setOrderList([]);

@@ -7,12 +7,14 @@ export const getNearbyRestaurants = async (req, res) => {
 
     // Get customer's primary location
     const userLocationResult = await pool.query(
-      'SELECT latitude, longitude FROM user_locations WHERE user_id = $1 AND is_primary = true',
+      "SELECT latitude, longitude FROM user_locations WHERE user_id = $1 AND is_primary = true",
       [id]
     );
 
     if (userLocationResult.rows.length === 0) {
-      return res.status(404).json({ message: 'Primary location not found for user.' });
+      return res
+        .status(404)
+        .json({ message: "Primary location not found for user." });
     }
     const userLat = userLocationResult.rows[0].latitude;
     const userLon = userLocationResult.rows[0].longitude;
@@ -45,8 +47,8 @@ export const getNearbyRestaurants = async (req, res) => {
 
     res.status(200).json(result.rows);
   } catch (err) {
-    console.error('Error in getNearbyRestaurants:', err.message);
-    res.status(500).json({ message: 'Internal server error' });
+    console.error("Error in getNearbyRestaurants:", err.message);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
 
@@ -59,8 +61,6 @@ export const getRestaurants = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
-
-
 
 export const getCategories = async (req, res) => {
   try {
@@ -114,6 +114,46 @@ export const getRestaurant = async (req, res) => {
     });
   } catch (err) {
     console.error("Error in get getRestaurnt:", err.message);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const getRestaurantByLocation = async (req, res) => {
+  try {
+    const { latitude, longitude } = req.body;
+
+    const userLat = latitude;
+    const userLon = longitude;
+
+    const query = `
+      SELECT 
+        r.restaurant_id, r.name, r.phone, r.email, r.average_rating, r.image_url,
+        ST_Distance(
+          ST_MakePoint(rl.longitude, rl.latitude)::GEOGRAPHY,
+          ST_MakePoint($1, $2)::GEOGRAPHY
+        ) AS distance
+      FROM restaurants r
+      JOIN user_locations rl ON r.restaurant_id = rl.restaurant_id
+      WHERE ST_DWithin(
+        ST_MakePoint(rl.longitude, rl.latitude)::GEOGRAPHY,
+        ST_MakePoint($1, $2)::GEOGRAPHY,
+        $3
+      )
+      ORDER BY distance
+      LIMIT 50
+    `;
+
+    let result = await pool.query(query, [userLon, userLat, radius]);
+
+    // If no restaurants found in 5km, try 10km
+    if (result.rows.length === 0) {
+      const radius2 = 10000; // 10km
+      result = await pool.query(query, [userLon, userLat, radius2]);
+    }
+
+    res.status(200).json(result.rows);
+  } catch (err) {
+    console.error("Error in getNearbyRestaurants:", err.message);
     res.status(500).json({ message: "Internal server error" });
   }
 };

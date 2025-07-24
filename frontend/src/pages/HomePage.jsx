@@ -15,23 +15,43 @@ const Home = () => {
   const { restaurants, categories, getrestaurants, loading, getcategories } =
     useRestaurantStore();
   const { authUser: user } = userAuthStore();
-  const { notifications, addNotification, clearNotifications } = useNotificationStore();
+  const { notifications, addNotification, clearNotifications } =
+    useNotificationStore();
   const [showNotifications, setShowNotifications] = useState(false);
   const notificationRef = useRef();
 
-  const handleOrderAccepted = useCallback(({ orderId, riderProfile }) => {
-    console.log(`Order ${orderId} accepted by rider:`, riderProfile);
-    addNotification({ orderId, riderProfile, type: 'order_accepted' });
-  }, [addNotification]);
+  const handleOrderAccepted = useCallback(
+    ({ orderId, riderProfile }) => {
+      console.log(`Order ${orderId} accepted by rider:`, riderProfile);
+      addNotification({ orderId, riderProfile, type: "order_accepted" });
+    },
+    [addNotification]
+  );
 
-  const handleOrderStatusUpdated = useCallback((updatedOrder) => {
-    console.log('Customer received order_status_updated event in handler:', updatedOrder);
-    if (updatedOrder.status === 'preparing') {
-      addNotification({ orderId: updatedOrder.order_id, status: updatedOrder.status, type: 'order_status_update', message: `Restaurant has accepted your order #${updatedOrder.order_id}.` });
-    } else if (updatedOrder.status === 'restaurant_rejected') {
-      addNotification({ orderId: updatedOrder.order_id, status: updatedOrder.status, type: 'order_status_update', message: `Restaurant has rejected your order #${updatedOrder.order_id}.` });
-    }
-  }, [addNotification]);
+  const handleOrderStatusUpdated = useCallback(
+    (updatedOrder) => {
+      console.log(
+        "Customer received order_status_updated event in handler:",
+        updatedOrder
+      );
+      if (updatedOrder.status === "preparing") {
+        addNotification({
+          orderId: updatedOrder.order_id,
+          status: updatedOrder.status,
+          type: "order_status_update",
+          message: `Restaurant has accepted your order #${updatedOrder.order_id}.`,
+        });
+      } else if (updatedOrder.status === "restaurant_rejected") {
+        addNotification({
+          orderId: updatedOrder.order_id,
+          status: updatedOrder.status,
+          type: "order_status_update",
+          message: `Restaurant has rejected your order #${updatedOrder.order_id}.`,
+        });
+      }
+    },
+    [addNotification]
+  );
 
   // Effect for fetching initial data (restaurants, categories)
   useEffect(() => {
@@ -43,13 +63,15 @@ const Home = () => {
   useEffect(() => {
     if (user && user.user_id) {
       console.log(`HomePage: Connecting socket with user ID: ${user.user_id}`);
-      socketService.connect(user.user_id, 'customer'); // Connect with user_id and type
+      socketService.connect(user.user_id, "customer"); // Connect with user_id and type
 
       socketService.on("order_accepted", handleOrderAccepted);
       socketService.on("order_status_updated", handleOrderStatusUpdated);
 
       return () => {
-        console.log("HomePage: Cleaning up customer homepage socket listeners and disconnecting.");
+        console.log(
+          "HomePage: Cleaning up customer homepage socket listeners and disconnecting."
+        );
         socketService.off("order_accepted", handleOrderAccepted);
         socketService.off("order_status_updated", handleOrderStatusUpdated);
         socketService.disconnect();
@@ -59,7 +81,10 @@ const Home = () => {
 
   useEffect(() => {
     function handleClickOutside(event) {
-      if (notificationRef.current && !notificationRef.current.contains(event.target)) {
+      if (
+        notificationRef.current &&
+        !notificationRef.current.contains(event.target)
+      ) {
         setShowNotifications(false);
       }
     }
@@ -90,17 +115,27 @@ const Home = () => {
         </button>
 
         {showNotifications && (
-          <div className="absolute top-16 right-4 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50 animate-fade-in" ref={notificationRef}>
+          <div
+            className="absolute top-16 right-4 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50 animate-fade-in"
+            ref={notificationRef}
+          >
             <div className="p-4 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-800">Notifications</h3>
+              <h3 className="text-lg font-semibold text-gray-800">
+                Notifications
+              </h3>
             </div>
             {notifications.length > 0 ? (
               <div className="max-h-60 overflow-y-auto">
                 {notifications.map((notif, index) => (
-                  <div key={index} className="p-4 border-b border-gray-200 last:border-b-0">
-                    {notif.type === 'order_accepted' && (
+                  <div
+                    key={index}
+                    className="p-4 border-b border-gray-200 last:border-b-0"
+                  >
+                    {notif.type === "order_accepted" && (
                       <p className="font-medium text-gray-900">
-                        Order #{notif.orderId} accepted by {notif.riderProfile.name} ({notif.riderProfile.phone_number})
+                        Order #{notif.orderId} accepted by{" "}
+                        {notif.riderProfile.name} (
+                        {notif.riderProfile.phone_number})
                       </p>
                     )}
                   </div>
@@ -110,7 +145,10 @@ const Home = () => {
               <p className="p-4 text-gray-600">No new notifications</p>
             )}
             <div className="p-4 border-t border-gray-200">
-              <button className="w-full text-blue-600 hover:text-blue-800" onClick={clearNotifications}>
+              <button
+                className="w-full text-blue-600 hover:text-blue-800"
+                onClick={clearNotifications}
+              >
                 Clear All
               </button>
             </div>
@@ -128,7 +166,7 @@ const Home = () => {
         <FeaturedRestaurants restaurants={restaurants} />
       )}
 
-      <FeaturedCategories categories={categories} />
+      {/* <FeaturedCategories categories={categories} /> */}
       <CTASection />
     </div>
   );

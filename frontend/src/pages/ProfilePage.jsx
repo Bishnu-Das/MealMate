@@ -2,30 +2,38 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { userAuthStore } from "../store/userAuthStore";
 import Navbar from "../Components/skeleton/Navbar";
+import LocationPickerModal from "../Components/LocationPickerModal";
 
 function Profile() {
   const navigate = useNavigate();
-  const { authUser, checkAuth, updateProfile } = userAuthStore();
+  const { authUser, updateProfile } = userAuthStore();
+  const [locationModalOpen, setLocationModalOpen] = useState(false);
 
   const [formData, setFormData] = useState({
-    fullName: "",
+    name: "",
     email: "",
     phone: "",
     location: { lat: "", lng: "" },
   });
 
+  const setLocation = (coords) => {
+    setFormData((prev) => ({
+      ...prev,
+      location: { lat: coords.lat, lng: coords.lng },
+    }));
+  };
+
   useEffect(() => {
     if (!authUser) {
       navigate("/login");
     } else {
-      // Initialize form with current user data
       setFormData({
         name: authUser.name || "",
         phone: authUser.phone || "",
         email: authUser.email || "",
         location: {
-          lat: authUser.location?.lat || null,
-          lng: authUser.location?.lng || null,
+          lat: authUser.location?.lat || "",
+          lng: authUser.location?.lng || "",
         },
       });
     }
@@ -102,8 +110,15 @@ function Profile() {
             </div>
 
             {/* Location Coordinates */}
-            <div className="flex gap-4">
+            <div className="flex gap-4 items-end">
               <div className="w-1/2">
+                <button
+                  type="button"
+                  onClick={() => setLocationModalOpen(true)}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
+                >
+                  Pick Location
+                </button>
                 <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                   Latitude
                 </label>
@@ -138,6 +153,13 @@ function Profile() {
             </button>
           </form>
         </div>
+
+        <LocationPickerModal
+          isOpen={locationModalOpen}
+          onClose={() => setLocationModalOpen(false)}
+          onSelect={setLocation}
+          initialLocation={formData.location}
+        />
       </section>
     </>
   );

@@ -2,6 +2,7 @@ import axios from "axios";
 import { userAuthStore } from "../src/store/userAuthStore";
 
 export const axiosInstance = axios.create({
+  // baseURL: "http://192.168.0.101:5001/api",
   baseURL: "http://localhost:5001/api",
   withCredentials: true,
 });
