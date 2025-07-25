@@ -108,14 +108,157 @@ export const getRestaurant = async (req, res) => {
       [id]
     );
 
+    const restaurantQuery = `
+    SELECT
+      r.restaurant_id,
+      r.name AS restaurant_name,
+      r.phone,
+      r.email,
+      r.average_rating,
+      r.image_url,
+      r.descriptions,
+      l.street,
+      l.city,
+      l.postal_code
+    FROM restaurants r
+    LEFT JOIN user_locations l ON r.restaurant_id = l.restaurant_id
+    WHERE r.restaurant_id = $1
+  `;
+    const restaurantRes = await pool.query(restaurantQuery, [id]);
+    if (restaurantRes.rowCount === 0) throw new Error("Restaurant not found");
+    const r = restaurantRes.rows[0];
+
+    const address = [r.street, r.city, r.postal_code]
+      .filter(Boolean)
+      .join(", ");
+
+    const hoursQuery = `
+    SELECT day_of_week, open_time, close_time
+    FROM restaurant_hours
+    WHERE restaurant_id = $1
+    ORDER BY
+      CASE
+        WHEN day_of_week = 'Mon' THEN 1
+        WHEN day_of_week = 'Tue' THEN 2
+        WHEN day_of_week = 'Wed' THEN 3
+        WHEN day_of_week = 'Thu' THEN 4
+        WHEN day_of_week = 'Fri' THEN 5
+        WHEN day_of_week = 'Sat' THEN 6
+        WHEN day_of_week = 'Sun' THEN 7
+        ELSE 8
+      END
+  `;
+    const hoursRes = await pool.query(hoursQuery, [id]);
+
     res.json({
-      restaruntDetails: resResult.rows[0],
+      restaruntDetails: {
+        name: r.restaurant_name,
+        descriptions: r.descriptions,
+        restaurant_id: r.restaurant_id,
+        // cuisine_type and description are not in your schema, so omit them
+        phone: r.phone,
+        email: r.email,
+        rating: r.average_rating,
+        reviewCount: 0,
+        deliveryTime: 0,
+        deliveryFee: 0,
+        image: r.image_url,
+        address,
+        // delivery_settings is not in your schema, so omit or set as empty/default
+        delivery_settings: {
+          delivery_fee: "",
+          min_order: "",
+          delivery_time: "",
+          delivery_radius: "",
+        },
+        operating_hours: hoursRes.rows.map((h) => ({
+          day_of_week: h.day_of_week,
+          open_time: h.open_time,
+          close_time: h.close_time,
+        })),
+      },
       menuItems: menuItems.rows,
     });
   } catch (err) {
     console.error("Error in get getRestaurnt:", err.message);
     res.status(500).json({ message: "Internal server error" });
   }
+  // const { id } = req.params;
+  // try {
+  //   const restaurantQuery = `
+  //   SELECT
+  //     r.restaurant_id,
+  //     r.name AS restaurant_name,
+  //     r.phone,
+  //     r.email,
+  //     r.average_rating,
+  //     r.image_url,
+  //     l.street,
+  //     l.city,
+  //     l.postal_code
+  //   FROM restaurants r
+  //   LEFT JOIN user_locations l ON r.restaurant_id = l.restaurant_id
+  //   WHERE r.restaurant_id = $1
+  // `;
+  //   const restaurantRes = await pool.query(restaurantQuery, [id]);
+  //   if (restaurantRes.rowCount === 0) throw new Error("Restaurant not found");
+  //   const r = restaurantRes.rows[0];
+
+  //   // 2. Compose address string
+  //   const address = [r.street, r.city, r.postal_code]
+  //     .filter(Boolean)
+  //     .join(", ");
+
+  //   // 3. Get operating hours
+  //   const hoursQuery = `
+  //   SELECT day_of_week, open_time, close_time
+  //   FROM restaurant_hours
+  //   WHERE restaurant_id = $1
+  //   ORDER BY
+  //     CASE
+  //       WHEN day_of_week = 'Mon' THEN 1
+  //       WHEN day_of_week = 'Tue' THEN 2
+  //       WHEN day_of_week = 'Wed' THEN 3
+  //       WHEN day_of_week = 'Thu' THEN 4
+  //       WHEN day_of_week = 'Fri' THEN 5
+  //       WHEN day_of_week = 'Sat' THEN 6
+  //       WHEN day_of_week = 'Sun' THEN 7
+  //       ELSE 8
+  //     END
+  // `;
+  //   const hoursRes = await pool.query(hoursQuery, [id]);
+
+  //   // 4. Compose frontend object
+  //   const backendData = {
+  //     name: r.restaurant_name,
+  //     // cuisine_type and description are not in your schema, so omit them
+  //     phone: r.phone,
+  //     email: r.email,
+  //     rating: r.average_rating,
+  //     reviewCount: 0,
+  //     deliveryTime: 0,
+  //     deliveryFee: 0,
+  //     image: r.image_url,
+  //     address,
+  //     // delivery_settings is not in your schema, so omit or set as empty/default
+  //     delivery_settings: {
+  //       delivery_fee: "",
+  //       min_order: "",
+  //       delivery_time: "",
+  //       delivery_radius: "",
+  //     },
+  //     operating_hours: hoursRes.rows.map((h) => ({
+  //       day_of_week: h.day_of_week,
+  //       open_time: h.open_time,
+  //       close_time: h.close_time,
+  //     })),
+  //   };
+  //   console.log(backendData);
+  //   res.json(backendData);
+  // } catch (err) {
+  //   console.log("error in getting restaurant details in pubic");
+  //   res.status(500).json({ message: "internal server error" });
+  // }
 };
 
 export const getRestaurantByLocation = async (req, res) => {
@@ -155,5 +298,35 @@ export const getRestaurantByLocation = async (req, res) => {
   } catch (err) {
     console.error("Error in getNearbyRestaurants:", err.message);
     res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const getReviewsAll = async (req, res) => {
+  const restaurantId = req.user.id;
+
+  try {
+    const reviews = await pool.query(
+      `
+      SELECT 
+        r.review_id,
+        r.rating, 
+        r.comment, 
+        r.created_at, 
+        u.name AS user_name,
+        mi.name AS menu_item_name
+      FROM reviews r
+      JOIN users u ON r.user_id = u.user_id
+      JOIN orders o ON o.order_id = r.order_id
+      LEFT JOIN menu_items mi ON mi.menu_item_id = r.menu_item_id
+      WHERE r.restaurant_id = $1
+      ORDER BY r.created_at DESC
+      `,
+      [restaurantId]
+    );
+
+    res.status(200).json(reviews.rows);
+  } catch (error) {
+    console.error("Error fetching restaurant reviews:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };

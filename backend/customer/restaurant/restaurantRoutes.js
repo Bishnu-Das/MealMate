@@ -9,7 +9,9 @@ import {
   getMenuItem,
   getRestaurant,
   getRestaurantByLocation,
+  getReviewsAll,
 } from "./restaurantController.js";
+import { getIndividualMenuReview } from "../../controllers/restaurant.controller.js";
 
 const router = express.Router();
 const role = "customer";
@@ -26,5 +28,6 @@ router.get("/menus", getMenus);
 router.get("/menu/:id", getMenuItem);
 router.get("/getRestaurant/:id", getRestaurant);
 router.get("/get_restaurant_by_location", getRestaurantByLocation);
+router.get("/reviews", getReviewsAll);
 
 export default router;

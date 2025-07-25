@@ -58,7 +58,6 @@ const DashboardRest = ({ setActiveTab, setCurrentView }) => {
   const getStatCard = async () => {
     try {
       const respons = await axiosInstance.get("/restaurant/today_stat");
-
       return respons.data;
     } catch (err) {
       console.error("Error fetching today stat:", err.message);
@@ -128,16 +127,14 @@ const DashboardRest = ({ setActiveTab, setCurrentView }) => {
             <CardContent>
               <div className="text-2xl font-bold text-white">{stat.value}</div>
               <div className="flex items-center space-x-1 mt-1">
-                {stat.changeType === "increase" ? (
+                {stat.type === "increase" ? (
                   <ArrowUpRight className="h-4 w-4 text-green-400" />
                 ) : (
                   <ArrowDownRight className="h-4 w-4 text-red-400" />
                 )}
                 <span
                   className={`text-sm ${
-                    stat.changeType === "increase"
-                      ? "text-green-400"
-                      : "text-red-400"
+                    stat.type === "increase" ? "text-green-400" : "text-red-400"
                   }`}
                 >
                   {stat.change}

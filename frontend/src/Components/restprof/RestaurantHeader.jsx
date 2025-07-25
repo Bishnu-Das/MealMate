@@ -1,6 +1,14 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { Star, Clock, MapPin, Info, Truck, DollarSign, Award } from "lucide-react";
+import {
+  Star,
+  Clock,
+  MapPin,
+  Info,
+  Truck,
+  DollarSign,
+  Award,
+} from "lucide-react";
 import restaurantHero from "../../assets/burger-deluxe.jpg";
 import { Badge } from "../../restaurant/components/ui/badge";
 
@@ -12,14 +20,14 @@ export function RestaurantHeader({ restaurant }) {
       <div className="relative">
         <div className="h-56 md:h-72 relative overflow-hidden">
           <img
-            src={restaurantHero}
+            src={restaurant.image}
             alt={restaurant.name}
             className="w-full h-full object-cover"
           />
           {/* Gradient Overlays */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
           <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-transparent to-black/40" />
-          
+
           {/* Decorative Elements */}
           <div className="absolute top-6 right-6 w-20 h-20 bg-white/10 rounded-full blur-2xl"></div>
           <div className="absolute bottom-10 left-10 w-16 h-16 bg-orange-500/20 rounded-full blur-xl"></div>
@@ -37,30 +45,43 @@ export function RestaurantHeader({ restaurant }) {
                 Premium
               </Badge>
             </div>
-            
-            <p className="text-xl text-gray-200 mb-4 font-medium">{restaurant.cuisine}</p>
-            
+
+            <p className="text-xl text-gray-200 mb-4 font-medium">
+              {restaurant.cuisine}
+            </p>
+
             <div className="flex flex-wrap items-center gap-6 text-sm">
               <div
                 className="flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-full px-4 py-2 cursor-pointer"
-                onClick={() => navigate(`/restaurant/${restaurant.restaurant_id}/reviews`)}
+                onClick={() =>
+                  navigate(`/restaurant/${restaurant.restaurant_id}/reviews`)
+                }
               >
                 <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-                <span className="font-bold text-lg">{restaurant.average_rating ? parseFloat(restaurant.average_rating).toFixed(1) : 'N/A'}</span>
+                <span className="font-bold text-lg">
+                  {restaurant.rating
+                    ? parseFloat(restaurant.rating).toFixed(1)
+                    : "N/A"}
+                </span>
                 <span className="text-gray-300">Reviews</span>
               </div>
-              
+
               <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-full px-4 py-2">
                 <Clock className="h-5 w-5 text-green-400" />
                 <span className="font-semibold">{restaurant.deliveryTime}</span>
               </div>
-              
+
               <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-full px-4 py-2">
                 <MapPin className="h-5 w-5 text-blue-400" />
                 <span className="font-semibold">{restaurant.address}</span>
               </div>
             </div>
           </div>
+        </div>
+      </div>
+      <div className="bg-grident-to-r from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-lg">
+        <div className="container mx-auto px-8 py-6">
+          <p className="text-gray-500">{restaurant.descriptions}</p>
         </div>
       </div>
 
@@ -73,8 +94,12 @@ export function RestaurantHeader({ restaurant }) {
                 <Truck className="h-5 w-5 text-white" />
               </div>
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Delivery Fee</p>
-                <p className="font-bold text-lg text-gray-900 dark:text-white">${restaurant.deliveryFee}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Delivery Fee
+                </p>
+                <p className="font-bold text-lg text-gray-900 dark:text-white">
+                  ${restaurant.deliveryFee}
+                </p>
               </div>
             </div>
 
@@ -83,8 +108,12 @@ export function RestaurantHeader({ restaurant }) {
                 <DollarSign className="h-5 w-5 text-white" />
               </div>
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Minimum Order</p>
-                <p className="font-bold text-lg text-gray-900 dark:text-white">${restaurant.minOrder}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Minimum Order
+                </p>
+                <p className="font-bold text-lg text-gray-900 dark:text-white">
+                  ${restaurant.minOrder}
+                </p>
               </div>
             </div>
 

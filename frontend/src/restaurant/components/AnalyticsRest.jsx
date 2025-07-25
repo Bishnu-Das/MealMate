@@ -36,45 +36,13 @@ import {
 import { useEffect, useState } from "react";
 import { axiosInstance } from "../../../lib/axios";
 
-// const dailyRevenueData = [
-//   { day: "Mon", revenue: 850, orders: 28 },
-//   { day: "Tue", revenue: 1200, orders: 35 },
-//   { day: "Wed", revenue: 980, orders: 31 },
-//   { day: "Thu", revenue: 1450, orders: 42 },
-//   { day: "Fri", revenue: 1800, orders: 58 },
-//   { day: "Sat", revenue: 2100, orders: 67 },
-//   { day: "Sun", revenue: 1650, orders: 48 },
-// ];
-
-// const weeklyTrendsData = [
-//   { week: "Week 1", revenue: 8500, orders: 280 },
-//   { week: "Week 2", revenue: 9200, orders: 310 },
-//   { week: "Week 3", revenue: 8800, orders: 295 },
-//   { week: "Week 4", revenue: 10100, orders: 340 },
-// ];
-
-// const categoryData = [
-//   { name: "Pizza", value: 35, color: "#FF6B6B" },
-//   { name: "Burgers", value: 25, color: "#4ECDC4" },
-//   { name: "Pasta", value: 20, color: "#45B7D1" },
-//   { name: "Salads", value: 12, color: "#96CEB4" },
-//   { name: "Drinks", value: 8, color: "#FFEAA7" },
-// ];
-
-// const topItems = [
-//   { name: "Margherita Pizza", orders: 89, revenue: "$1,334.11" },
-//   { name: "Chicken Burger", orders: 76, revenue: "$987.24" },
-//   { name: "Pasta Carbonara", orders: 65, revenue: "$1,039.35" },
-//   { name: "Caesar Salad", orders: 54, revenue: "$593.46" },
-//   { name: "Pepperoni Pizza", orders: 48, revenue: "$719.52" },
-// ];
-
 const AnalyticsRest = () => {
   const [dailyRevenueData, setDailyRevenueData] = useState([]);
   const [topItems, setTopItems] = useState([]);
   const [weeklyTrendsData, setWeeklyTrendeData] = useState([]);
   const [categoryData, setCategoryData] = useState([]);
   const [loading, setLoading] = useState(false);
+
   const [weeklyRevenueVal, setWeeklyRevenueVal] = useState({
     last_week: 0,
     last_two_week: 0,
@@ -87,7 +55,7 @@ const AnalyticsRest = () => {
     last_week: 0,
     second_last_week: 0,
   });
-  const [rating, setRating] = useState();
+  const [rating, setRating] = useState(0);
 
   const getDailyRevenue = async () => {
     try {
@@ -100,65 +68,23 @@ const AnalyticsRest = () => {
       return [];
     }
   };
-  // const getWeekLyRevenueVal = async () => {
-  //   try {
-  //     const response = await axiosInstance.get(
-  //       "restaurant/stats/last_two_week_revenue"
-  //     );
-  //     console.log("weekly revenue data: ", response.data);
-  //     return response.data;
-  //   } catch (err) {
-  //     console.error("Error getting weekly revenue val: ", err.message);
-  //     return [];
-  //   }
-  // };
-  // const getTotalOrderLastWeekVal = async () => {
-  //   try {
-  //     const response = await axiosInstance.get(
-  //       "restaurant/stats/last_two_week_order_count"
-  //     );
-  //     return response.data;
-  //   } catch (err) {
-  //     console.error("Error getting weekly revenue val: ", err.message);
-  //     return [];
-  //   }
-  // };
-
-  // const getNewCustomerNumberLastTwoWeek = async () => {
-  //   try {
-  //     const response = await axiosInstance.get(
-  //       "restaurant/stats/last_two_week_new_customer"
-  //     );
-  //     return response.data;
-  //   } catch (err) {
-  //     console.error("Error getting weekly revenue val: ", err.message);
-  //     return [];
-  //   }
-  // };
-
-  // useEffect(() => {
-  //   const fetchWeeklyRevenueval = async () => {
-  //     const res = await getWeekLyRevenueVal();
-  //     setWeeklyRevenueVal(res);
-  //     const res2 = await getTotalOrderLastWeekVal();
-  //     setTotalOrderLastWeekVal(res2);
-  //     const res3 = await getNewCustomerNumberLastTwoWeek();
-  //     setNewCustomerVal(res3);
-  //   };
-  //   fetchWeeklyRevenueval();
-  // }, []);
 
   useEffect(() => {
     const fetchAnalytics = async () => {
       try {
-        const [revenueRes, orderRes, customerRes] = await Promise.all([
-          axiosInstance.get("/restaurant/stats/last_two_week_revenue"),
-          axiosInstance.get("/restaurant/stats/last_two_week_order_count"),
-          axiosInstance.get("/restaurant/stats/last_two_week_new_customer"),
-        ]);
+        const [revenueRes, orderRes, customerRes, restData] = await Promise.all(
+          [
+            axiosInstance.get("/restaurant/stats/last_two_week_revenue"),
+            axiosInstance.get("/restaurant/stats/last_two_week_order_count"),
+            axiosInstance.get("/restaurant/stats/last_two_week_new_customer"),
+            axiosInstance.get("/restaurant/get_restaurant_profile"),
+          ]
+        );
+        console.log("restaurant data: ", restData.data);
         setWeeklyRevenueVal(revenueRes.data);
         setTotalOrderLastWeekVal(orderRes.data);
         setNewCustomerVal(customerRes.data);
+        setRating(restData.data.rating);
       } catch (err) {
         console.error("Error fetching analytics:", err);
       } finally {
@@ -488,12 +414,12 @@ const AnalyticsRest = () => {
             <Star className="h-4 w-4 text-yellow-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-white">4.8</div>
-            <div className="flex items-center space-x-1 mt-1">
+            <div className="text-2xl font-bold text-white">{rating}</div>
+            {/* <div className="flex items-center space-x-1 mt-1">
               <TrendingUp className="h-4 w-4 text-green-400" />
               <span className="text-sm text-green-400">+0.2</span>
               <span className="text-sm text-gray-400">vs last week</span>
-            </div>
+            </div> */}
           </CardContent>
         </Card>
       </div>

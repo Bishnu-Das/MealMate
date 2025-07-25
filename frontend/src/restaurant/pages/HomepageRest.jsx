@@ -8,6 +8,7 @@ import RestaurantProfile from "../components/RestaurantProfile";
 import AnalyticsRest from "../components/AnalyticsRest";
 import LoginPage from "../components/LoginPageRest";
 import { restaurantAuthStore } from "../store/restaurantAuthStore";
+import RestaurantReviewsPage from "../components/RestaurantReviewDashboard";
 
 function HomepageRest() {
   const [activeTab, setActiveTab] = React.useState("dashboard");
@@ -27,6 +28,8 @@ function HomepageRest() {
         return <RestaurantProfile />;
       case "analytics":
         return <AnalyticsRest />;
+      case "reviews":
+        return <RestaurantReviewsPage />;
       default:
         return <DashboardRest />;
     }

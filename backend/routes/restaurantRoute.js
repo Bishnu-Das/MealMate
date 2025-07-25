@@ -20,6 +20,8 @@ import {
   get_orders,
   get_menu_categories,
   change_menu_availability,
+  getReviewsAll,
+  getIndividualMenuReview,
 } from "../controllers/restaurant.controller.js";
 
 const router = express.Router();
@@ -89,4 +91,11 @@ router.put(
   updateOrderStatus
 );
 router.get("/orders", authorization, authorizeRoles(role), get_orders);
+router.get("/reviews", authorization, authorizeRoles(role), getReviewsAll);
+router.get(
+  "/reviews/menu/:id",
+  authorization,
+  authorizeRoles(role),
+  getIndividualMenuReview
+);
 export { router };

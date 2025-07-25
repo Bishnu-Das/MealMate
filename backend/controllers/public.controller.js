@@ -113,6 +113,7 @@ export const get_restaurant_details = async (req, res) => {
         close_time: h.close_time,
       })),
     };
+    console.log(backendData);
     res.json(backendData);
   } catch (err) {
     console.log("error in getting restaurant details in pubic");
