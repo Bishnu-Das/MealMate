@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Card,
   CardContent,
@@ -13,18 +13,20 @@ import { Textarea } from "../components/ui/textarea";
 import { ArrowLeft, Upload, Save } from "lucide-react";
 import { restaurantAuthStore } from "../store/restaurantAuthStore";
 import toast from "react-hot-toast";
+import { axiosInstance } from "../../../lib/axios";
 
-const categories = [
-  "Pizza",
-  "Burgers",
-  "Pasta",
-  "Salads",
-  "Desserts",
-  "Beverages",
-];
+// const categories = [
+//   "Pizza",
+//   "Burgers",
+//   "Pasta",
+//   "Salads",
+//   "Desserts",
+//   "Beverages",
+// ];
 
 export const AddMenuItemRest = ({ onBack, onSave }) => {
   const { add_menu_item, isChangingMenu } = restaurantAuthStore();
+  const [categories, setCategories] = useState([]);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -35,6 +37,26 @@ export const AddMenuItemRest = ({ onBack, onSave }) => {
   });
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
+  const isOtherSelected = formData.category === "Other";
+  const [customCategory, setCustomCategory] = useState("");
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await axiosInstance.get("/restaurant/get_menu_categories");
+        const fetchedCategories = res.data;
+
+        if (!fetchedCategories.includes("Other")) {
+          fetchedCategories.push("Other");
+        }
+
+        setCategories(fetchedCategories);
+      } catch (err) {
+        console.error("Failed to fetch categories:", err);
+      }
+    };
+    fetchCategories();
+  }, []);
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -49,7 +71,9 @@ export const AddMenuItemRest = ({ onBack, onSave }) => {
     formPayload.append("name", formData.name);
     formPayload.append("description", formData.description);
     formPayload.append("price", formData.price);
-    formPayload.append("category", formData.category);
+    const finalCategory =
+      formData.category === "Other" ? customCategory : formData.category;
+    formPayload.append("category", finalCategory);
     formPayload.append("discount", formData.discount);
     formPayload.append("is_available", true);
     if (imageFile) {
@@ -68,6 +92,9 @@ export const AddMenuItemRest = ({ onBack, onSave }) => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    if (name === "category" && value !== "Other") {
+      setCustomCategory(""); // Clear custom input if user switches from 'Other'
+    }
   };
 
   if (isChangingMenu) {
@@ -212,6 +239,24 @@ export const AddMenuItemRest = ({ onBack, onSave }) => {
                       </option>
                     ))}
                   </select>
+
+                  {isOtherSelected && (
+                    <div className="mt-2">
+                      <Label htmlFor="customCategory">
+                        Enter Custom Category *
+                      </Label>
+                      <Input
+                        id="customCategory"
+                        name="customCategory"
+                        type="text"
+                        placeholder="Enter custom category"
+                        value={customCategory}
+                        onChange={(e) => setCustomCategory(e.target.value)}
+                        required
+                        className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-400 mt-1"
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
 

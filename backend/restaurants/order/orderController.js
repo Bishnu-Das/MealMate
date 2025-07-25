@@ -39,6 +39,7 @@ export const getRecentOrders = async (req, res) => {
           id: `#ORD-${String(orderId).padStart(3, "0")}`,
           customer: row.customer,
           phone: row.phone_number,
+          created_at: row.created_at,
           items: [],
           total: 0,
           status: row.status,

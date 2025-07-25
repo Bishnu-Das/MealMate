@@ -78,6 +78,22 @@ const DashboardRest = ({ setActiveTab, setCurrentView }) => {
       const response = await axiosInstance.get("/restaurant/recent_orders");
       const rawOrders = response.data;
 
+      const getTimeAgo = (createdAt) => {
+        const createdDate = new Date(createdAt);
+        const now = new Date();
+        const diffMs = now - createdDate; // difference in milliseconds
+
+        const seconds = Math.floor(diffMs / 1000);
+        const minutes = Math.floor(seconds / 60);
+        const hours = Math.floor(minutes / 60);
+        const days = Math.floor(hours / 24);
+
+        if (seconds < 60) return `${seconds} sec ago`;
+        else if (minutes < 60) return `${minutes} min ago`;
+        else if (hours < 24) return `${hours} hr ago`;
+        else return `${days} day${days > 1 ? "s" : ""} ago`;
+      };
+
       const formattedOrders = rawOrders.map((order) => ({
         id: order.id,
         customer: order.customer,
@@ -86,7 +102,7 @@ const DashboardRest = ({ setActiveTab, setCurrentView }) => {
           .join(", "),
         amount: `$${order.total.toFixed(2)}`,
         status: order.status,
-        time: "3 min ago", // Placeholder; replace with real time logic if available
+        time: getTimeAgo(order.created_at),
       }));
 
       return formattedOrders;
