@@ -6,7 +6,9 @@ import { useRiderAuthStore } from "../../rider/store/riderAuthStore";
 
 const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { logout, authUser } = userAuthStore();
+  const logout = userAuthStore((state) => state.logout);
+  const authUser = userAuthStore((state) => state.authUser);
+
   const { authrider, logout: riderLogout } = useRiderAuthStore();
   const navigate = useNavigate();
 
@@ -25,7 +27,7 @@ const Navbar = () => {
         <>
           <li>
             <Link to="/profile">
-              {authUser.name}
+              {authUser.name || authUser.user?.name || "Profile"}
             </Link>
           </li>
           <li>
@@ -42,9 +44,7 @@ const Navbar = () => {
       return (
         <>
           <li>
-            <Link to="/rider/data/profile">
-              {authrider.name}
-            </Link>
+            <Link to="/rider/data/profile">{authrider.name}</Link>
           </li>
         </>
       );
@@ -92,8 +92,7 @@ const Navbar = () => {
               </li>
             </>
           )}
-          
-          
+
           {authUser && (
             <li>
               <Link to="/order-history">Orders</Link>
@@ -122,14 +121,15 @@ const Navbar = () => {
                 </Link>
               </li>
               <li>
-                <Link to="/restaurants" onClick={() => setMobileMenuOpen(false)}>
+                <Link
+                  to="/restaurants"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
                   Restaurants
                 </Link>
               </li>
             </>
           )}
-          
-          
 
           {authUser ? (
             <>

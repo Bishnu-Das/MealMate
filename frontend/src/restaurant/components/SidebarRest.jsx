@@ -16,7 +16,7 @@ const menuItems = [
   { id: "orders", label: "Orders", icon: ShoppingBag },
   { id: "analytics", label: "Analytics", icon: BarChart3 },
   { id: "profile", label: "Restaurant Profile", icon: User },
-  { id: "reviews", label: "Your Reviews", icon: Star },
+  { id: "reviews", label: "Customer Reviews", icon: Star },
 ];
 
 function SidebarRest({ activeTab, setActiveTab }) {

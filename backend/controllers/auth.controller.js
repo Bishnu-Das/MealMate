@@ -4,50 +4,74 @@ import pool from "../db.js";
 
 export const signup = async (req, res) => {
   try {
-    //1. destructure the req.body (name, email, password)
     const { name, email, password, phone_number, latitude, longitude } =
       req.body;
     const role_id = "customer";
-    //2. check if user exist through error
-    const user = await pool.query("select * from users where email = $1", [
+
+    const user = await pool.query("SELECT * FROM users WHERE email = $1", [
       email,
     ]);
-    // res.json(user.rows);
+
     if (user.rows.length !== 0) {
       return res.status(409).json({ message: "user already exist" });
     }
 
-    //3. bcypt the user password
     const saltRound = 10;
     const salt = await bcrypt.genSalt(saltRound);
     const hashedPassword = await bcrypt.hash(password, salt);
-    //4. enter the new user iside our database
+
     const newUser = await pool.query(
-      "INSERT INTO USERS (name,email,password,phone_number,role_id) VALUES ($1,$2,$3,$4,$5) RETURNING *",
+      "INSERT INTO users (name, email, password, phone_number, role_id) VALUES ($1, $2, $3, $4, $5) RETURNING *",
       [name, email, hashedPassword, phone_number, role_id]
     );
+
+    let addressData = {
+      latitude: null,
+      longitude: null,
+      street: "",
+      city: "",
+      postal_code: "",
+    };
+
     if (latitude !== null && longitude !== null) {
-      await pool.query(
-        "INSERT INTO user_locations (user_id, latitude, longitude, is_primary) VALUES ($1, $2, $3, true)",
+      const locationResult = await pool.query(
+        "INSERT INTO user_locations (user_id, latitude, longitude, is_primary) VALUES ($1, $2, $3, true) RETURNING *",
         [newUser.rows[0].user_id, latitude, longitude]
       );
+
+      addressData.latitude = locationResult.rows[0].latitude;
+      addressData.longitude = locationResult.rows[0].longitude;
     }
-    //5. generating our jwt token
+
     generateToken(newUser.rows[0].user_id, "customer", res);
+
     res.status(201).json({
+      message: "created successfully",
       user_id: newUser.rows[0].user_id,
+      name: newUser.rows[0].name,
       email: newUser.rows[0].email,
       phone_number: newUser.rows[0].phone_number,
       role_id: newUser.rows[0].role_id,
-      message: "created successfully",
+      location: {
+        latitude: addressData.latitude,
+        longitude: addressData.longitude,
+      },
+      address: {
+        street: addressData.street,
+        city: addressData.city,
+        postal_code: addressData.postal_code,
+      },
     });
   } catch (err) {
     console.log(err.message);
     res.status(500).json({ message: "server error" });
   }
 };
+
 export const login = async (req, res) => {
   const { email, password } = req.body;
+
+  console.log(req.body);
 
   try {
     //2. check if user dosen't exist
@@ -73,12 +97,29 @@ export const login = async (req, res) => {
     const user_id = user.rows[0].user_id;
     generateToken(user_id, "customer", res);
 
+    const addressResult = await pool.query(
+      "SELECT longitude, latitude, street, city, postal_code FROM user_locations WHERE user_id = $1",
+      [user.rows[0].user_id]
+    );
+
+    const address = addressResult.rows[0] || {};
+
     res.status(200).json({
       message: "Login successful",
       user_id: user.rows[0].user_id,
+      name: user.rows[0].name,
       email: user.rows[0].email,
       phone_number: user.rows[0].phone_number,
       role_id: user.rows[0].role_id,
+      location: {
+        latitude: address.latitude ?? null,
+        longitude: address.longitude ?? null,
+      },
+      address: {
+        street: address.street ?? "",
+        city: address.city ?? "",
+        postal_code: address.postal_code ?? "",
+      },
     });
   } catch (err) {
     console.log("Error in login controller", err.message);
@@ -129,20 +170,47 @@ export const changePassword = async (req, res) => {
 
 export const varifyUser = async (req, res) => {
   const id = req.user.id;
+
   try {
-    const user = await pool.query("SELECT * FROM users WHERE user_id =  $1", [
-      id,
-    ]);
+    const userResult = await pool.query(
+      "SELECT * FROM users WHERE user_id = $1",
+      [id]
+    );
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const user = userResult.rows[0];
+
+    const addressResult = await pool.query(
+      "SELECT latitude, longitude, street, city, postal_code FROM user_locations WHERE user_id = $1 AND is_primary = true",
+      [id]
+    );
+
+    const location = {
+      latitude: addressResult.rows[0]?.latitude ?? null,
+      longitude: addressResult.rows[0]?.longitude ?? null,
+    };
+
+    const address = {
+      street: addressResult.rows[0]?.street ?? "",
+      city: addressResult.rows[0]?.city ?? "",
+      postal_code: addressResult.rows[0]?.postal_code ?? "",
+    };
+
     res.status(200).json({
       message: "varified user",
-      user_id: user.rows[0].user_id,
-      name: user.rows[0].name,
-      email: user.rows[0].email,
-      phone_number: user.rows[0].phone_number,
-      role_id: user.rows[0].role_id,
+      user_id: user.user_id,
+      name: user.name,
+      email: user.email,
+      phone_number: user.phone_number,
+      role_id: user.role_id,
+      location,
+      address,
     });
   } catch (err) {
-    console.log(err.message);
+    console.log("Error in varifyUser", err.message);
     res.status(500).json({ message: "internal server error" });
   }
 };
@@ -150,10 +218,9 @@ export const varifyUser = async (req, res) => {
 export const getProfile = async (req, res) => {
   const id = req.user.id;
   try {
-    const result = await pool.query(
-      "SELECT * FROM users WHERE user_id =  $1",
-      [id]
-    );
+    const result = await pool.query("SELECT * FROM users WHERE user_id =  $1", [
+      id,
+    ]);
     res.status(200).json(result.rows);
   } catch (err) {
     console.error("Error in get profile:", err.message);
@@ -163,50 +230,158 @@ export const getProfile = async (req, res) => {
 
 export const updateProfile = async (req, res) => {
   const id = req.user.id;
+  const { name, phone, location, address } = req.body;
 
-  const { name, phone, location } = req.body;
-  const latitude = location.lat;
-  const longitude = location.lng;
+  const latitude = location?.lat;
+  const longitude = location?.lng;
 
-  console.log(req.body);
-  console.log(name, phone, latitude, longitude);
+  const street = address?.street ?? "";
+  const city = address?.city ?? "";
+  const postal_code = address?.postal_code ?? "";
+
   try {
-    // Try updating location
-    let locationUpdate;
+    let locationResult;
+
+    // Update or insert location with lat/lng
     if (latitude != null && longitude != null) {
-      locationUpdate = await pool.query(
-        "UPDATE user_locations SET latitude = $1, longitude = $2 WHERE user_id = $3 RETURNING *",
-        [latitude, longitude, id]
+      locationResult = await pool.query(
+        `UPDATE user_locations 
+         SET latitude = $1, longitude = $2, street = $3, city = $4, postal_code = $5 
+         WHERE user_id = $6 
+         RETURNING *`,
+        [latitude, longitude, street, city, postal_code, id]
       );
+
+      if (locationResult.rowCount === 0) {
+        await pool.query(
+          `INSERT INTO user_locations 
+           (user_id, latitude, longitude, street, city, postal_code, is_primary) 
+           VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+          [id, latitude, longitude, street, city, postal_code, true]
+        );
+      }
     }
 
-    // If no existing location, insert it
-    if (latitude != null && longitude != null) {
-      if (locationUpdate.rowCount === 0) {
+    // If lat/lng missing but address provided, update or insert address-only location
+    else if (street || city || postal_code) {
+      locationResult = await pool.query(
+        `UPDATE user_locations 
+         SET street = $1, city = $2, postal_code = $3 
+         WHERE user_id = $4 
+         RETURNING *`,
+        [street, city, postal_code, id]
+      );
+
+      if (locationResult.rowCount === 0) {
         await pool.query(
-          "INSERT INTO user_locations (user_id, latitude, longitude, is_primary) VALUES ($1, $2, $3, $4)",
-          [id, latitude, longitude, true]
+          `INSERT INTO user_locations 
+           (user_id, street, city, postal_code, is_primary) 
+           VALUES ($1, $2, $3, $4, $5)`,
+          [id, street, city, postal_code, true]
         );
       }
     }
 
     // Update name and phone
     const user = await pool.query(
-      "UPDATE users SET name = $1, phone_number = $2 WHERE user_id = $3 returning *",
+      `UPDATE users 
+       SET name = $1, phone_number = $2 
+       WHERE user_id = $3 
+       RETURNING *`,
       [name, phone, id]
     );
 
-    console.log("profile updated...", user.rows[0]);
+    const updatedUser = user.rows[0];
+    console.log("Profile updated:", updatedUser);
+
     res.status(200).json({
-      message: "updated profile successful",
-      user_id: user.rows[0].user_id,
-      name: user.rows[0].name,
-      email: user.rows[0].email,
-      phone_number: user.rows[0].phone_number,
-      role_id: user.rows[0].role_id,
+      message: "Profile updated successfully",
+      user_id: updatedUser.user_id,
+      name: updatedUser.name,
+      email: updatedUser.email,
+      phone_number: updatedUser.phone_number,
+      role_id: updatedUser.role_id,
+      address: {
+        street: street,
+        city: city,
+        postal_code: postal_code,
+      },
+      location: {
+        longitude: longitude,
+        latitude: latitude,
+      },
     });
   } catch (err) {
     console.error("Error in updateProfile:", err.message);
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
+// export const updateProfile = async (req, res) => {
+//   const id = req.user.id;
+
+//   const { name, phone, location, address } = req.body;
+//   const latitude = location.lat;
+//   const longitude = location.lng;
+
+//   const street = address.street;
+//   const city = address.city;
+//   const postal_code = address.postal_code;
+
+//   console.log(req.body);
+//   console.log(name, phone, latitude, longitude);
+//   try {
+//     // Try updating location
+//     let locationUpdate;
+//     if (latitude != null && longitude != null) {
+//       locationUpdate = await pool.query(
+//         "UPDATE user_locations SET latitude = $1, longitude = $2, street = $3, city = $4, postal_code = $5 WHERE user_id = $6 RETURNING *",
+//         [latitude, longitude, street, city, postal_code, id]
+//       );
+//     }
+
+//     // If no existing location, insert it
+//     if (latitude != null && longitude != null) {
+//       if (locationUpdate.rowCount === 0) {
+//         await pool.query(
+//           "INSERT INTO user_locations (user_id, latitude, longitude,street, city, postal_code, is_primary) VALUES ($1, $2, $3, $4,$5,$6,$7)",
+//           [id, latitude, longitude, street, city, postal_code, true]
+//         );
+//       }
+//     }
+//     if (
+//       (latitude == null || longitude == null) &&
+//       (street != "" || city != "" || postal_code != "")
+//     ) {
+//       locationUpdate = await pool.query(
+//         "UPDATE user_locations SET street = $1, city = $2, postal_code = $3 WHERE user_id = $4 RETURNING *",
+//         [street, city, postal_code, id]
+//       );
+//       if (locationUpdate.rowCount === 0) {
+//         await pool.query(
+//           "INSERT INTO user_locations (user_id,street,city,postal_code, is_primary) VALUES ($1, $2, $3, $4,$5)",
+//           [id, street, city, postal_code, true]
+//         );
+//       }
+//     }
+
+//     // Update name and phone
+//     const user = await pool.query(
+//       "UPDATE users SET name = $1, phone_number = $2 WHERE user_id = $3 returning *",
+//       [name, phone, id]
+//     );
+
+//     console.log("profile updated...", user.rows[0]);
+//     res.status(200).json({
+//       message: "updated profile successful",
+//       user_id: user.rows[0].user_id,
+//       name: user.rows[0].name,
+//       email: user.rows[0].email,
+//       phone_number: user.rows[0].phone_number,
+//       role_id: user.rows[0].role_id,
+//     });
+//   } catch (err) {
+//     console.error("Error in updateProfile:", err.message);
+//     res.status(500).json({ message: "Internal server error" });
+//   }
+// };

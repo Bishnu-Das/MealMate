@@ -14,6 +14,7 @@ function Profile() {
     email: "",
     phone: "",
     location: { lat: "", lng: "" },
+    address: { street: "", city: "", postal_code: "" },
   });
 
   const setLocation = (coords) => {
@@ -27,13 +28,19 @@ function Profile() {
     if (!authUser) {
       navigate("/login");
     } else {
+      console.log("authuser in profile page:", authUser);
       setFormData({
         name: authUser.name || "",
-        phone: authUser.phone || "",
+        phone: authUser.phone_number || "",
         email: authUser.email || "",
         location: {
-          lat: authUser.location?.lat || "",
-          lng: authUser.location?.lng || "",
+          lat: authUser.location?.latitude || null,
+          lng: authUser.location?.longitude || null,
+        },
+        address: {
+          street: authUser.address?.street || "",
+          city: authUser.address?.city || "",
+          postal_code: authUser.address?.postal_code || "",
         },
       });
     }
@@ -94,6 +101,46 @@ function Profile() {
               />
             </div>
 
+            {/* Address */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+              <input
+                id="street"
+                placeholder="street"
+                value={formData.address.street}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    address: { ...prev.address, street: e.target.value },
+                  }))
+                }
+                className="bg-gray-700 text-white p-2.5 border rounded-lg border-gray-300 dark:border-gray-600"
+              />
+              <input
+                id="city"
+                placeholder="city"
+                value={formData.address.city}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    address: { ...prev.address, city: e.target.value },
+                  }))
+                }
+                className="bg-gray-700 text-white p-2.5 border rounded-lg border-gray-300 dark:border-gray-600"
+              />
+              <input
+                id="postal_code"
+                placeholder="postal code"
+                value={formData.address.postal_code}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    address: { ...prev.address, postal_code: e.target.value },
+                  }))
+                }
+                className="bg-gray-700 text-white p-2.5 border rounded-lg border-gray-300 dark:border-gray-600"
+              />
+            </div>
+
             {/* Phone Number */}
             <div>
               <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -110,7 +157,7 @@ function Profile() {
             </div>
 
             {/* Location Coordinates */}
-            <div className="flex gap-4 items-end">
+            <div className="flex my-1.5 gap-4 items-end">
               <div className="w-1/2">
                 <button
                   type="button"
@@ -119,7 +166,7 @@ function Profile() {
                 >
                   Pick Location
                 </button>
-                <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label className="block my-3 mx-1 mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                   Latitude
                 </label>
                 <input

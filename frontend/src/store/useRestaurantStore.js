@@ -24,7 +24,7 @@ export const useRestaurantStore = create((set, get) => ({
       set({ restaurants: res.data });
     } catch (err) {
       console.error("Error fetching restaurants", err);
-      toast.error(err?.response?.data?.message || "Failed to load restaurants");
+      //toast.error(err?.response?.data?.message || "Failed to load restaurants");
       set({ restaurants: [] });
     } finally {
       set({ loading: false });

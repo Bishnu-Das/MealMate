@@ -355,7 +355,7 @@ function OrderManagement() {
 
       {/* Tabs for Order Filtering */}
       <Tabs defaultValue="all" className="w-full">
-        <TabsList className="flex bg-gray-800 border border-gray-700">
+        <TabsList className="flex justify-around bg-gray-800 border border-gray-700">
           {[
             "all",
             "pending_restaurant_acceptance",

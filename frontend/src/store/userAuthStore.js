@@ -3,6 +3,7 @@ import { axiosInstance } from "../../lib/axios";
 import toast from "react-hot-toast";
 import { data } from "react-router-dom";
 import axios from "axios";
+import { useRestaurantStore } from "./useRestaurantStore";
 
 export const userAuthStore = create((set, get) => ({
   authUser: null,
@@ -16,7 +17,7 @@ export const userAuthStore = create((set, get) => ({
   checkAuth: async () => {
     try {
       const res = await axiosInstance.get("/customer/is-varify");
-      set({ authUser: { ...res.data, role: 'customer' } });
+      set({ authUser: { ...res.data, role: "customer" } });
     } catch (err) {
       console.log("Error in checkAuth", err);
     } finally {
@@ -28,10 +29,12 @@ export const userAuthStore = create((set, get) => ({
     set({ isLoggingIn: true });
     try {
       const res = await axiosInstance.post("/customer/login", data);
-      set({ authUser: { ...res.data, role: 'customer' } });
+      console.log("logged in user:", res.data);
+      set({ authUser: { ...res.data, role: "customer" } });
+      console.log("auth user:", get().authUser);
       toast.success("Logged in successfully");
     } catch (err) {
-      toast.error(err.response.data.message);
+      toast.error(err.response.data.message || "something went wrong..");
     } finally {
       set({ isLoggingIn: false });
     }
@@ -40,7 +43,7 @@ export const userAuthStore = create((set, get) => ({
     set({ isSigningUp: true });
     try {
       const res = await axiosInstance.post("/customer/register", data);
-      set({ authUser: { ...res.data, role: 'customer' } });
+      set({ authUser: { ...res.data, role: "customer" } });
       toast.success("Signed up successfully");
     } catch (err) {
       toast.error(err.response.data.message);
@@ -50,9 +53,14 @@ export const userAuthStore = create((set, get) => ({
   },
   logout: async (data) => {
     set({ isLoggingOut: true });
+    const getrestaurants = useRestaurantStore.getState().getrestaurants;
+    const getcategories = useRestaurantStore.getState().getcategories;
     try {
       await axiosInstance.get("/customer/logout");
       set({ authUser: null });
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      await getrestaurants();
+      await getcategories();
       toast.success("Logged out successfully");
     } catch (err) {
       toast.error(err.response.data.message);

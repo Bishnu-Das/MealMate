@@ -268,12 +268,12 @@ const HomepageRider = () => {
                             <p className="text-sm text-gray-600">
                               Drop-off: {order.dropoff_addr}
                             </p>
-                            <button>
+                            <button
                               className="mt-2 w-full bg-green-600
                               hover:bg-green-700 text-white font-semibold py-2
                               px-4 rounded-lg transition-colors duration-200
-                              text-sm" onClick=
-                              {async () => {
+                              text-sm"
+                              onClick={async () => {
                                 try {
                                   await axiosInstance.put(
                                     `/rider/data/orders/${order.order_id}/accept`
@@ -301,7 +301,7 @@ const HomepageRider = () => {
                                   );
                                 }
                               }}
-                              {/* > */}
+                            >
                               Accept Order
                             </button>
                           </div>

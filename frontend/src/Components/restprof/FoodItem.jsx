@@ -10,20 +10,22 @@ import { Badge } from "../../restaurant/components/ui/badge";
 import { cn } from "../../lib/utils";
 
 export function FoodItem({ item, onAddToCart, cartItems }) {
-  const isInCart = cartItems.some((cartItem) => cartItem.menu_item_id === item.menu_item_id);
-  
+  const isInCart = cartItems.some(
+    (cartItem) => cartItem.menu_item_id === item.menu_item_id
+  );
+
   return (
     <Card className="overflow-hidden bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 hover:shadow-2xl transition-all duration-500 border-0 shadow-lg group">
       <div className="md:flex">
         {/* Image */}
-        <div className="md:w-48 h-40 md:h-36 relative overflow-hidden">
+        <div className="py-2 rounded-2xl px-2 md:w-48 h-40 md:h-36 relative overflow-hidden">
           <img
             src={item.menu_item_image_url}
             alt={item.name}
             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-          
+
           {/* Badges */}
           <div className="absolute top-3 left-3 flex flex-col gap-2">
             {item.isPopular && (
@@ -45,7 +47,7 @@ export function FoodItem({ item, onAddToCart, cartItems }) {
           {/* Discount Badge */}
           {item.discount && (
             <Badge className="absolute top-3 right-3 bg-red-500 text-white font-bold shadow-lg">
-              {Math.round(item.discount * 100)}% OFF
+              {Math.round((item.discount / item.price) * 100)}% OFF
             </Badge>
           )}
         </div>
@@ -94,33 +96,32 @@ export function FoodItem({ item, onAddToCart, cartItems }) {
                 )}
               </div>
             </div>
-          </div>
-
-          {/* Add Button */}
-          <div className="flex justify-end">
-            <Button
-              onClick={() => onAddToCart(item)}
-              size="lg"
-              className={cn(
-                "px-6 py-3 rounded-xl font-bold transition-all duration-300 shadow-lg",
-                isInCart 
-                  ? "bg-green-500 hover:bg-green-600 text-white cursor-default transform scale-105" 
-                  : "bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white hover:scale-105 hover:shadow-xl"
-              )}
-              disabled={isInCart}
-            >
-              {isInCart ? (
-                <>
-                  <span className="mr-2">✓</span>
-                  Added to Cart
-                </>
-              ) : (
-                <>
-                  <Plus className="h-5 w-5 mr-2" />
-                  Add to Cart
-                </>
-              )}
-            </Button>
+            {/* Add Button */}
+            <div className="flex justify-items-end-safe">
+              <Button
+                onClick={() => onAddToCart(item)}
+                size="lg"
+                className={cn(
+                  "px-6 py-3 rounded-xl font-bold transition-all duration-300 shadow-lg",
+                  isInCart
+                    ? "bg-green-500 hover:bg-green-600 text-white cursor-default transform scale-105"
+                    : "bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white hover:scale-105 hover:shadow-xl"
+                )}
+                disabled={isInCart}
+              >
+                {isInCart ? (
+                  <>
+                    <span className="mr-2">✓</span>
+                    Added to Cart
+                  </>
+                ) : (
+                  <>
+                    <Plus className="h-5 w-5 mr-2" />
+                    Add to Cart
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
         </div>
       </div>
