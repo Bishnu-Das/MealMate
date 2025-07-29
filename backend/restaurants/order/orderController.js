@@ -24,7 +24,8 @@ export const getRecentOrders = async (req, res) => {
       JOIN order_items OI ON O.order_id = OI.order_id
       JOIN menu_items MI ON OI.menu_item_id = MI.menu_item_id
       WHERE O.restaurant_id = $1
-      ORDER BY O.order_id DESC
+      ORDER BY O.created_at DESC
+      LIMIT 15
       `,
       [restaurantId]
     );

@@ -43,15 +43,18 @@ console.log("Registering customer restaurant routes...");
 app.use("/api/customer", customerRestaurantRoutes);
 console.log("Registering customer cart routes...");
 app.use("/api/customer", customerCartRoutes);
+console.log("Registering customer order routes...");
+app.use("/api/customer/order", customerOrderRoutes);
+
 console.log("Registering rider routes...");
 app.use("/api/rider", riderAuthRoute);
 app.use("/api/rider/data", router);
 console.log("Registering restaurant routes...");
+
 app.use("/api/restaurant", restaurantRoute);
 console.log("Registering menu routes...");
 app.use("/api/menu", menuRoutes); // Register the menu routes
-console.log("Registering customer order routes...");
-app.use("/api/customer/order", customerOrderRoutes);
+
 console.log("Registering customer payment routes...");
 const store_id = process.env.SSL_COMMERZ_STORE_ID;
 const store_passwd = process.env.SSL_COMMERZ_STORE_PASSWORD;

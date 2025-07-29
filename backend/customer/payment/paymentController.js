@@ -2,13 +2,17 @@
 import SSLCommerzPayment from "sslcommerz-lts";
 import pool from "../../db.js";
 import { createOrderFromCart } from "../order/orderController.js";
+import { v4 as uuidv4 } from "uuid";
 
 const is_live = process.env.SSL_COMMERZ_IS_LIVE === "true";
 
 export const initiatePayment = async (req, res, store_id, store_passwd) => {
   const { cartItems, customerInfo, total_amount, paymentMethod } = req.body;
+
+  console.log(req.body);
   const userId = req.user.id;
-  const tran_id = `TXN_${Date.now()}_${userId}`;
+  // const tran_id = `TXN_${Date.now()}_${userId}`;
+  const tran_id = `TXN_${Date.now()}_${userId}_${uuidv4()}`;
 
   const client = await pool.connect();
 
@@ -243,6 +247,7 @@ export const initiatePayment = async (req, res, store_id, store_passwd) => {
 // };
 
 // --- CLEANED: TESTING-ONLY REDIRECT HANDLERS (ONE DEFINITION EACH) ---
+
 export const handleSuccess = async (req, res) => {
   const { tran_id } = req.query;
   const client = await pool.connect();

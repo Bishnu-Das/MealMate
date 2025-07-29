@@ -16,7 +16,7 @@ const HeroSection = () => (
         fresh.
       </p>
 
-      {/* Search Bar */}
+      {/* Search Bar
       <div className="flex flex-col sm:flex-row items-stretch gap-4 max-w-xl mx-auto">
         <div className="flex items-center bg-white rounded-lg overflow-hidden w-full">
           <span className="px-4 text-[#e21b70]">
@@ -32,7 +32,7 @@ const HeroSection = () => (
           <Search className="w-5 h-5 mr-2" />
           Find Food
         </button>
-      </div>
+      </div> */}
     </div>
   </section>
 );

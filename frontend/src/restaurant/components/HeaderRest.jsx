@@ -95,13 +95,13 @@ const HeaderRest = ({ onLogout }) => {
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <h1 className="text-2xl font-bold text-white">Hello, Chef!</h1>
-          <div className="relative">
+          {/* <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <Input
               placeholder="Search orders, menu items..."
               className="pl-10 w-80 bg-gray-800 text-white border-gray-700 placeholder:text-gray-400"
             />
-          </div>
+          </div> */}
         </div>
 
         <div className="flex items-center space-x-4">

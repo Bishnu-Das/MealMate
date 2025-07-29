@@ -31,18 +31,18 @@ const FeaturesSection = () => (
   <div className="py-20 bg-base-100">
     <div className="max-w-7xl mx-auto px-4">
       <div className="text-center mb-16">
-        <h2 className="text-4xl font-bold mb-4 text-gray-800">
+        <h2 className="text-4xl font-bold mb-4 text-gray-100">
           Why choose FoodPanda?
         </h2>
-        <p className="text-xl text-gray-600">
+        <p className="text-xl text-gray-300">
           Experience the best food delivery service
         </p>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        {features.map((feature, idx) => (
+        {features.slice(0, 9).map((feature, idx) => (
           <div
             key={idx}
-            className={`card bg-white border shadow-sm hover:shadow-md transition ${feature.cardBg}`}
+            className={`card bg-gray-400 border shadow-sm hover:shadow-md transition ${feature.cardBg}`}
           >
             <div className="card-body text-center">
               <div

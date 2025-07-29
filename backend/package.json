@@ -27,6 +27,7 @@
     "postgres": "^3.4.7",
     "socket.io": "^4.8.1",
     "sslcommerz": "^1.7.0",
-    "sslcommerz-lts": "^1.1.0"
+    "sslcommerz-lts": "^1.1.0",
+    "uuid": "^11.1.0"
   }
 }

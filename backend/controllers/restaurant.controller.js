@@ -718,7 +718,7 @@ export const get_orders = async (req, res) => {
       [restaurant_id]
     );
     //  JSON_AGG(oi.*) AS items
-    console.log(orders.rows);
+    //console.log(orders.rows);
     res.status(200).json(orders.rows);
   } catch (err) {
     console.error("Error in get_orders controller:", err.message);

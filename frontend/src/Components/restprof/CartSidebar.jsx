@@ -64,7 +64,7 @@ export function CartSidebar({ cartItems, onUpdateQuantity, onRemoveItem }) {
                     className="flex gap-3 p-3 bg-gray-800 rounded-lg"
                   >
                     <img
-                      src={item.image}
+                      src={item.menu_item_image_url}
                       alt={item.name}
                       className="w-16 h-16 object-cover rounded-md"
                     />
@@ -97,7 +97,10 @@ export function CartSidebar({ cartItems, onUpdateQuantity, onRemoveItem }) {
                             size="sm"
                             className="h-8 w-8 p-0 bg-gray-700 text-white hover:bg-gray-600 border-gray-600"
                             onClick={() =>
-                              onUpdateQuantity(item.menu_item_id, item.quantity + 1)
+                              onUpdateQuantity(
+                                item.menu_item_id,
+                                item.quantity + 1
+                              )
                             }
                           >
                             <Plus className="h-3 w-3" />
@@ -108,9 +111,7 @@ export function CartSidebar({ cartItems, onUpdateQuantity, onRemoveItem }) {
                           variant="ghost"
                           size="sm"
                           className="h-8 w-8 p-0 text-red-500 hover:text-red-600"
-                          onClick={() =>
-                            onRemoveItem(item.cart_item_id)
-                          }
+                          onClick={() => onRemoveItem(item.cart_item_id)}
                         >
                           <X className="h-3 w-3" />
                         </Button>

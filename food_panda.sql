@@ -211,6 +211,22 @@ CREATE TABLE chat_messages (
 ALTER TABLE menu_categories
 ADD CONSTRAINT category_name_not_empty CHECK (trim(name) <> '');
 
+CREATE OR REPLACE FUNCTION get_distance_km(
+  lon1 DOUBLE PRECISION,
+  lat1 DOUBLE PRECISION,
+  lon2 DOUBLE PRECISION,
+  lat2 DOUBLE PRECISION
+)
+RETURNS DOUBLE PRECISION AS $$
+BEGIN
+  RETURN ST_Distance(
+    ST_MakePoint(lon1, lat1)::geography,
+    ST_MakePoint(lon2, lat2)::geography
+  ) / 1000;
+END;
+$$ LANGUAGE plpgsql IMMUTABLE;
+
+
 -- FUNCTION to upsert restaurant hours
 
 CREATE OR REPLACE FUNCTION upsert_restaurant_hours(

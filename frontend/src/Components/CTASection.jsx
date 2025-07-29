@@ -21,7 +21,7 @@ const CTASection = () => (
     </div>
 
     {/* Footer Grid */}
-    <div className="border-t border-white/20 py-10 px-6 sm:px-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 text-sm bg-primary-900">
+    <div className="border-t border-white/20 py-10 px-6 sm:px-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 text-sm bg-primary-900">
       {/* About */}
       <div>
         <h4 className="font-bold mb-4">Company</h4>
@@ -82,13 +82,13 @@ const CTASection = () => (
       </div>
 
       {/* App Download */}
-      <div>
+      {/* <div>
         <h4 className="font-bold mb-4">Get the App</h4>
         <div className="flex flex-col gap-3">
           <img src="/images/appstore.png" alt="App Store" className="w-32" />
           <img src="/images/playstore.png" alt="Google Play" className="w-32" />
         </div>
-      </div>
+      </div> */}
 
       {/* Social & Location */}
       <div>

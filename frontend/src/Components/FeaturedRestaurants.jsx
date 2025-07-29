@@ -18,7 +18,7 @@ const FeaturedRestaurants = ({ restaurants }) => (
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         {restaurants && restaurants.length > 0 ? (
-          restaurants.map((restaurant) => (
+          restaurants.slice(0, 9).map((restaurant) => (
             <Link
               key={restaurant.restaurant_id}
               to={`/restaurant/${restaurant.restaurant_id}`}
@@ -31,7 +31,7 @@ const FeaturedRestaurants = ({ restaurants }) => (
                     alt={restaurant.name}
                     className="w-full h-56 object-cover group-hover:scale-110 transition-transform duration-300"
                   />
-                  <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1 flex items-center gap-1">
+                  <div className="absolute top-4 right-4 bg-gray-800/90 backdrop-blur-sm rounded-full px-3 py-1 flex items-center gap-1">
                     <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
                     <span className="font-semibold text-sm">
                       {restaurant.average_rating}

@@ -30,6 +30,18 @@ export const useRestaurantStore = create((set, get) => ({
       set({ loading: false });
     }
   },
+  searchRestaurantsByName: async (searchTerm) => {
+    try {
+      const res = await axiosInstance.get("/customer/searchRestaurant", {
+        params: { name: searchTerm },
+      });
+      set({ restaurants: res.data });
+      return res.data;
+    } catch (err) {
+      console.error("Search error:", err);
+      return [];
+    }
+  },
   getcategories: async () => {
     try {
       const res = await axiosInstance.get("customer/getCategories");

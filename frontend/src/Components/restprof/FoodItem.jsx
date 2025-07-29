@@ -14,6 +14,8 @@ export function FoodItem({ item, onAddToCart, cartItems }) {
     (cartItem) => cartItem.menu_item_id === item.menu_item_id
   );
 
+  // console.log("added to cart", cartItems);
+
   return (
     <Card className="overflow-hidden bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 hover:shadow-2xl transition-all duration-500 border-0 shadow-lg group">
       <div className="md:flex">

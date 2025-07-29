@@ -18,7 +18,8 @@ export default function Restaurant() {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
-  const { cartItems, addToCart, updateQuantity, removeFromCart, clearCart } = useCartStore();
+  const { cartItems, addToCart, updateQuantity, removeFromCart, clearCart } =
+    useCartStore();
   const { authUser } = userAuthStore();
   const navigate = useNavigate();
   const [darkMode, setDarkMode] = useState(false);
@@ -28,15 +29,13 @@ export default function Restaurant() {
   const [restaurant, setRestaurant] = useState();
 
   const [filters, setFilters] = useState({
-    sortBy: 'relevance',
+    sortBy: "relevance",
     priceRange: [0, 100],
-    selectedCategories: []
+    selectedCategories: [],
   });
 
   const { id } = useParams();
   console.log("rest id: ", id);
-
-  
 
   useEffect(() => {
     axiosInstance
@@ -65,27 +64,35 @@ export default function Restaurant() {
       });
   }, [id]);
 
-  const filteredItems = menuItems.filter(item => {
-    const matchesCategory = filters.selectedCategories.length === 0 || filters.selectedCategories.includes(item.category_id);
-    const matchesPrice = item.price >= filters.priceRange[0] && item.price <= filters.priceRange[1];
-    const matchesSearch = 
-      (item.menu_name && item.menu_name.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (item.description && item.description.toLowerCase().includes(searchQuery.toLowerCase()));
-    return matchesCategory && matchesPrice && matchesSearch;
-  }).sort((a, b) => {
-    switch (filters.sortBy) {
-      case 'price-low':
-        return a.price - b.price;
-      case 'price-high':
-        return b.price - a.price;
-      case 'newest':
-        return new Date(b.created_at) - new Date(a.created_at);
-      case 'most-sold':
-        return b.order_count - a.order_count;
-      default:
-        return 0;
-    }
-  });
+  const filteredItems = menuItems
+    .filter((item) => {
+      const matchesCategory =
+        filters.selectedCategories.length === 0 ||
+        filters.selectedCategories.includes(item.category_id);
+      const matchesPrice =
+        item.price >= filters.priceRange[0] &&
+        item.price <= filters.priceRange[1];
+      const matchesSearch =
+        (item.menu_name &&
+          item.menu_name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (item.description &&
+          item.description.toLowerCase().includes(searchQuery.toLowerCase()));
+      return matchesCategory && matchesPrice && matchesSearch;
+    })
+    .sort((a, b) => {
+      switch (filters.sortBy) {
+        case "price-low":
+          return a.price - b.price;
+        case "price-high":
+          return b.price - a.price;
+        case "newest":
+          return new Date(b.created_at) - new Date(a.created_at);
+        case "most-sold":
+          return b.order_count - a.order_count;
+        default:
+          return 0;
+      }
+    });
 
   useEffect(() => {
     setCurrentPage(1);
@@ -93,12 +100,15 @@ export default function Restaurant() {
 
   const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const currentItems = filteredItems.slice(startIndex, startIndex + itemsPerPage);
+  const currentItems = filteredItems.slice(
+    startIndex,
+    startIndex + itemsPerPage
+  );
 
   const handlePageChange = (page) => {
     setCurrentPage(page);
     if (menuItemsRef.current) {
-      menuItemsRef.current.scrollIntoView({ behavior: 'smooth' });
+      menuItemsRef.current.scrollIntoView({ behavior: "smooth" });
     }
   };
 
@@ -119,7 +129,13 @@ export default function Restaurant() {
         restaurant_id: restaurant.restaurant_id,
         quantity: 1,
       });
-      addToCart({ ...item, quantity: 1, cart_item_id: res.data.item.cart_item_id, restaurant_name: restaurant.name, restaurant_id: restaurant.restaurant_id });
+      addToCart({
+        ...item,
+        quantity: 1,
+        cart_item_id: res.data.item.cart_item_id,
+        restaurant_name: restaurant.name,
+        restaurant_id: restaurant.restaurant_id,
+      });
     } catch (err) {
       console.error("Error adding to cart:", err);
     }
@@ -188,15 +204,23 @@ export default function Restaurant() {
         </div>
 
         <div className="container mx-auto px-6 pb-8">
-          <FoodFilter menuCategories={menuCategories} onFilterChange={setFilters} />
+          <FoodFilter
+            menuCategories={menuCategories}
+            onFilterChange={setFilters}
+          />
         </div>
 
         <div className="flex flex-col lg:flex-row container mx-auto px-6 pb-12 gap-6">
           <div className="flex-grow">
             {/* Menu Items */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 border border-gray-200 dark:border-gray-700" ref={menuItemsRef}>
+            <div
+              className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 border border-gray-200 dark:border-gray-700"
+              ref={menuItemsRef}
+            >
               <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-8 text-center">
-                {activeCategory === "Popular" ? "Popular Dishes" : `${activeCategory} Menu`}
+                {activeCategory === "Popular"
+                  ? "Popular Dishes"
+                  : `${activeCategory} Menu`}
               </h2>
               <div className="space-y-6">
                 {filteredItems.length === 0 ? (
@@ -208,13 +232,17 @@ export default function Restaurant() {
                       No items found matching your search.
                     </p>
                     <p className="text-sm text-gray-400 dark:text-gray-500 mt-2">
-                      Try searching with different keywords or browse our categories.
+                      Try searching with different keywords or browse our
+                      categories.
                     </p>
                   </div>
                 ) : (
                   <div className="grid gap-6">
                     {currentItems.map((item) => (
-                      <div key={item.menu_item_id} className="bg-gradient-to-r from-white to-gray-50 dark:from-gray-700 dark:to-gray-800 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 border border-gray-200 dark:border-gray-600">
+                      <div
+                        key={item.menu_item_id}
+                        className="bg-gradient-to-r from-white to-gray-50 dark:from-gray-700 dark:to-gray-800 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 border border-gray-200 dark:border-gray-600"
+                      >
                         <FoodItem
                           key={item.menu_item_id}
                           item={item}
@@ -236,34 +264,38 @@ export default function Restaurant() {
                   disabled={currentPage === 1}
                   className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                     currentPage === 1
-                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                      : 'bg-white text-gray-700 hover:bg-gray-50 shadow-sm'
+                      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                      : "bg-white text-gray-700 hover:bg-gray-50 shadow-sm"
                   }`}
                 >
                   Previous
                 </button>
-                
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                  <button
-                    key={page}
-                    onClick={() => handlePageChange(page)}
-                    className={`w-10 h-10 rounded-lg font-medium transition-colors ${
-                      currentPage === page
-                        ? 'bg-pink-500 text-white shadow-lg'
-                        : 'bg-white text-gray-700 hover:bg-gray-50 shadow-sm'
-                    }`}
-                  >
-                    {page}
-                  </button>
-                ))}
-                
+
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                  (page) => (
+                    <button
+                      key={page}
+                      onClick={() => handlePageChange(page)}
+                      className={`w-10 h-10 rounded-lg font-medium transition-colors ${
+                        currentPage === page
+                          ? "bg-pink-500 text-white shadow-lg"
+                          : "bg-white text-gray-700 hover:bg-gray-50 shadow-sm"
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  )
+                )}
+
                 <button
-                  onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
+                  onClick={() =>
+                    handlePageChange(Math.min(totalPages, currentPage + 1))
+                  }
                   disabled={currentPage === totalPages}
                   className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                     currentPage === totalPages
-                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                      : 'bg-white text-gray-700 hover:bg-gray-50 shadow-sm'
+                      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                      : "bg-white text-gray-700 hover:bg-gray-50 shadow-sm"
                   }`}
                 >
                   Next
@@ -273,16 +305,20 @@ export default function Restaurant() {
 
             {/* Results Info */}
             <div className="mt-6 text-center text-gray-600">
-              Showing {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredItems.length)} of {filteredItems.length} items
+              Showing {startIndex + 1}-
+              {Math.min(startIndex + itemsPerPage, filteredItems.length)} of{" "}
+              {filteredItems.length} items
             </div>
           </div>
 
           {/* Cart Sidebar */}
-          <CartSidebar
-            cartItems={cartItems}
-            onUpdateQuantity={handleUpdateQuantity}
-            onRemoveItem={handleRemoveItem}
-          />
+          {authUser && (
+            <CartSidebar
+              cartItems={cartItems}
+              onUpdateQuantity={handleUpdateQuantity}
+              onRemoveItem={handleRemoveItem}
+            />
+          )}
         </div>
       </div>
     </div>

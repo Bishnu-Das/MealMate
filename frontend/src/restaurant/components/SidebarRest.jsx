@@ -28,7 +28,7 @@ function SidebarRest({ activeTab, setActiveTab }) {
             <ChefHat className="h-6 w-6 text-white" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-white">FoodPartner</h2>
+            <h2 className="text-lg font-bold text-white">BhojPotro</h2>
             <p className="text-sm text-gray-400">Restaurant Dashboard</p>
           </div>
         </div>
