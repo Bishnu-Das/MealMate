@@ -1,12 +1,14 @@
 import pool from "../db.js";
-import { getIO } from '../socket.js';
+import { getIO } from "../socket.js";
 
 export const getDashboardData = async (req, res) => {
   try {
     const riderId = req.user.id; // Assuming the rider's ID is available in the request object
 
     if (!riderId) {
-      return res.status(400).json({ message: "Rider ID not found in request." });
+      return res
+        .status(400)
+        .json({ message: "Rider ID not found in request." });
     }
 
     // Fetch available orders (status = 'pending') and calculate delivery fee
@@ -146,7 +148,9 @@ export const updateRiderAvailability = async (req, res) => {
       [is_available, userId]
     );
 
-    res.status(200).json({ message: "Rider availability updated successfully" });
+    res
+      .status(200)
+      .json({ message: "Rider availability updated successfully" });
   } catch (err) {
     console.error("Error updating rider availability:", err.message);
     res.status(500).json({ message: "Server error" });
@@ -158,7 +162,9 @@ export const getDeliveryHistory = async (req, res) => {
     const riderId = req.user.id;
 
     if (!riderId) {
-      return res.status(400).json({ message: "Rider ID not found in request." });
+      return res
+        .status(400)
+        .json({ message: "Rider ID not found in request." });
     }
 
     const history = await pool.query(
@@ -187,7 +193,6 @@ export const acceptOrder = async (req, res) => {
     const riderId = req.user.id;
 
     // Check if the rider already has an active order (status 'preparing' or 'out_for_delivery')
-    
 
     const updatedOrder = await pool.query(
       "UPDATE orders SET rider_id = $1, status = 'out_for_delivery' WHERE order_id = $2 AND status = 'ready_for_pickup' RETURNING *",
@@ -195,7 +200,9 @@ export const acceptOrder = async (req, res) => {
     );
 
     if (updatedOrder.rows.length === 0) {
-      return res.status(404).json({ message: "Order not found or not ready for pickup" });
+      return res
+        .status(404)
+        .json({ message: "Order not found or not ready for pickup" });
     }
 
     await pool.query(
@@ -215,26 +222,52 @@ export const acceptOrder = async (req, res) => {
       "SELECT user_id, restaurant_id FROM orders WHERE order_id = $1",
       [orderId]
     );
-    const { user_id: customerId, restaurant_id: restaurantId } = orderDetailsResult.rows[0];
+    const { user_id: customerId, restaurant_id: restaurantId } =
+      orderDetailsResult.rows[0];
 
     // Emit order accepted event to restaurant and customer
     const io = getIO();
-    io.to(`restaurant_${restaurantId}`).emit('order_accepted', { orderId, riderProfile });
-    io.to(`customer_${customerId}`).emit('order_accepted', { orderId, riderProfile });
+    io.to(`restaurant_${restaurantId}`).emit("order_accepted", {
+      orderId,
+      riderProfile,
+    });
+    io.to(`customer_${customerId}`).emit("order_accepted", {
+      orderId,
+      riderProfile,
+    });
 
     // Store notification for the restaurant
     await pool.query(
-      'INSERT INTO notifications (user_id, target_type, target_id, order_id, type, message) VALUES ($1, $2, $3, $4, $5, $6)',
-      [riderId, 'restaurant', restaurantId, orderId, 'delivery_status', `Rider ${riderProfile.name} has accepted order #${orderId}.`]
+      "INSERT INTO notifications (user_id, target_type, target_id, order_id, type, message) VALUES ($1, $2, $3, $4, $5, $6)",
+      [
+        riderId,
+        "restaurant",
+        restaurantId,
+        orderId,
+        "delivery_status",
+        `Rider ${riderProfile.name} has accepted order #${orderId}.`,
+      ]
     );
 
     // Store notification for the customer
     await pool.query(
-      'INSERT INTO notifications (user_id, target_type, target_id, order_id, type, message) VALUES ($1, $2, $3, $4, $5, $6)',
-      [riderId, 'user', customerId, orderId, 'delivery_status', `Your order #${orderId} has been accepted by rider ${riderProfile.name}.`]
+      "INSERT INTO notifications (user_id, target_type, target_id, order_id, type, message) VALUES ($1, $2, $3, $4, $5, $6)",
+      [
+        riderId,
+        "user",
+        customerId,
+        orderId,
+        "delivery_status",
+        `Your order #${orderId} has been accepted by rider ${riderProfile.name}.`,
+      ]
     );
 
-    res.status(200).json({ message: "Order accepted successfully", order: updatedOrder.rows[0] });
+    res
+      .status(200)
+      .json({
+        message: "Order accepted successfully",
+        order: updatedOrder.rows[0],
+      });
   } catch (err) {
     console.error("Error accepting order:", err.message);
     res.status(500).json({ message: "Server error" });
@@ -248,7 +281,12 @@ export const updateOrderStatus = async (req, res) => {
 
     let updatedOrder;
 
-    if (status === 'delivered') {
+    if (status === "delivered") {
+      await pool.query(
+        "UPDATE payments SET status = 'completed', paid_at = CURRENT_TIMESTAMP WHERE order_id = $1 AND method_type = 'cod' AND status = 'pending'",
+        [orderId]
+      );
+
       updatedOrder = await pool.query(
         "UPDATE orders SET status = $1, delivered_at = NOW() WHERE order_id = $2 RETURNING *",
         [status, orderId]
@@ -268,7 +306,12 @@ export const updateOrderStatus = async (req, res) => {
       return res.status(404).json({ message: "Order not found" });
     }
 
-    res.status(200).json({ message: "Order status updated successfully", order: updatedOrder.rows[0] });
+    res
+      .status(200)
+      .json({
+        message: "Order status updated successfully",
+        order: updatedOrder.rows[0],
+      });
   } catch (err) {
     console.error("Error updating order status:", err.message);
     res.status(500).json({ message: "Server error" });
@@ -316,10 +359,14 @@ export const getOrderDetails = async (req, res) => {
     }
 
     // If the order is assigned to a different rider, deny access.
-    return res.status(403).json({ message: "Order not authorized for this rider" });
+    return res
+      .status(403)
+      .json({ message: "Order not authorized for this rider" });
 
     if (orderResult.rows.length === 0) {
-      return res.status(404).json({ message: "Order not found or not authorized" });
+      return res
+        .status(404)
+        .json({ message: "Order not found or not authorized" });
     }
 
     res.status(200).json({ order: orderResult.rows[0] });

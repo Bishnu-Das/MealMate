@@ -61,6 +61,18 @@ export const getRestaurants = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
+export const getRestaurantsSearchByName = async (req, res) => {
+  const rest_name = req.name;
+  try {
+    const result = pool.query(
+      `SELECT * FROM restaurants WHERE name LIKE '%$1%' LIMIT 30`,
+      [rest_name.trim()]
+    );
+  } catch (err) {
+    console.error("Error in get restaurant:", err.message);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
 
 export const getCategories = async (req, res) => {
   try {

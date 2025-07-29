@@ -20,7 +20,7 @@ export const useRestaurantStore = create((set, get) => ({
         res = await axiosInstance.get("customer/getRestaurants");
       }
       // console.log("restaurants are: ");
-      // console.log(res.data);
+      console.log(res.data);
       set({ restaurants: res.data });
     } catch (err) {
       console.error("Error fetching restaurants", err);

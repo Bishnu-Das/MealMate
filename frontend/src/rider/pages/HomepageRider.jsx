@@ -59,6 +59,7 @@ const HomepageRider = () => {
         const res = await axiosInstance.get("/rider/data/dashboard");
         setDashboardData(res.data);
         setIsAvailable(res.data.isAvailable);
+        console.log(res.data);
       } catch (err) {
         console.error("Error fetching dashboard data:", err);
         toast.error("Failed to load dashboard data.");

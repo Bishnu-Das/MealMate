@@ -120,3 +120,16 @@ export const get_restaurant_details = async (req, res) => {
     res.status(500).json({ message: "internal server error" });
   }
 };
+
+export const get_restaurant_by_name = async (req, res) => {
+  const name = req.name;
+  try {
+    const rest = await pool.query("SELECT * FROM restaurants WHERE name = $1", [
+      name,
+    ]);
+    res.json(res.rows);
+  } catch (err) {
+    console.log("error in getting restaurant search by name");
+    res.status(500).json({ message: "internal server error" });
+  }
+};

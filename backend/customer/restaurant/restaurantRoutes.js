@@ -10,6 +10,7 @@ import {
   getRestaurant,
   getRestaurantByLocation,
   getReviewsAll,
+  getRestaurantsSearchByName,
 } from "./restaurantController.js";
 import { getIndividualMenuReview } from "../../controllers/restaurant.controller.js";
 
@@ -29,5 +30,6 @@ router.get("/menu/:id", getMenuItem);
 router.get("/getRestaurant/:id", getRestaurant);
 router.get("/get_restaurant_by_location", getRestaurantByLocation);
 router.get("/reviews", getReviewsAll);
+router.get("/searchRestaurant", getRestaurantsSearchByName);
 
 export default router;
