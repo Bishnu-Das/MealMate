@@ -294,7 +294,7 @@ CREATE OR REPLACE FUNCTION archive_deleted_menu_item()
 RETURNS TRIGGER AS $$
 BEGIN
   INSERT INTO archived_menu_items SELECT OLD.*;
-  RETURN OLD;
+  RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 

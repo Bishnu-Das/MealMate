@@ -417,7 +417,7 @@ function RestaurantProfile() {
           </Card>
 
           {/* Delivery Settings */}
-          <Card className="bg-gray-800">
+          {/* <Card className="bg-gray-800">
             <CardHeader>
               <CardTitle className="text-white">Delivery Settings</CardTitle>
               <CardDescription className="text-gray-400">
@@ -464,7 +464,7 @@ function RestaurantProfile() {
                 />
               </div>
             </CardContent>
-          </Card>
+          </Card> */}
         </div>
 
         {/* Right Content */}
@@ -514,11 +514,11 @@ function RestaurantProfile() {
                 </Badge>
               </div>
               <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
+                {/* <div className="flex items-center space-x-2">
                   <Clock className="h-4 w-4 text-blue-400" />
                   <span className="text-sm">Avg Delivery Time</span>
-                </div>
-                <Badge className="bg-blue-800 text-blue-100">32 min</Badge>
+                </div> */}
+                {/* <Badge className="bg-blue-800 text-blue-100">32 min</Badge> */}
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
@@ -531,7 +531,7 @@ function RestaurantProfile() {
           </Card>
 
           {/* Account Status */}
-          <Card className="bg-gray-800">
+          {/* <Card className="bg-gray-800">
             <CardHeader>
               <CardTitle className="text-white">Account Status</CardTitle>
               <CardDescription className="text-gray-400">
@@ -552,7 +552,7 @@ function RestaurantProfile() {
                 <Badge className="bg-green-800 text-green-100">Active</Badge>
               </div>
             </CardContent>
-          </Card>
+          </Card> */}
         </div>
       </div>
 

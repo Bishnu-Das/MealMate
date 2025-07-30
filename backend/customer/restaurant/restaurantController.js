@@ -27,7 +27,7 @@ export const getNearbyRestaurants = async (req, res) => {
       JOIN user_locations rl ON r.restaurant_id = rl.restaurant_id
       WHERE get_distance_km(rl.longitude, rl.latitude, $1, $2) <= $3
       ORDER BY distance
-      LIMIT 30
+      LIMIT 60
     `;
 
     let result = await pool.query(query, [userLon, userLat, radius]);
@@ -111,7 +111,17 @@ export const getRestaurant = async (req, res) => {
       [id]
     );
     const menuItems = await pool.query(
-      `SELECT mi.*, mi.created_at, mc.name as category_name, mc.menu_category_image_url, COALESCE((SELECT CAST(SUM(oi.quantity) AS INTEGER) FROM order_items oi WHERE oi.menu_item_id = mi.menu_item_id), 0) as order_count FROM menu_items mi JOIN menu_categories mc ON mi.category_id = mc.category_id WHERE mc.restaurant_id = $1`,
+      `SELECT 
+        mi.*, 
+        mi.created_at, 
+        mc.name as category_name, 
+        mc.menu_category_image_url, 
+        COALESCE((
+          SELECT CAST(SUM(oi.quantity) AS INTEGER) 
+          FROM order_items oi 
+          WHERE oi.menu_item_id = mi.menu_item_id), 0) as order_count 
+        FROM menu_items mi JOIN menu_categories mc ON mi.category_id = mc.category_id 
+        WHERE mc.restaurant_id = $1 AND mi.is_active = true`,
       [id]
     );
 

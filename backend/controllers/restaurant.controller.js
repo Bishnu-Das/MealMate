@@ -353,37 +353,22 @@ export const delete_menu = async (req, res) => {
   console.log(restaurant_id, menu_item_id);
 
   try {
-    // Verify the item belongs to this restaurant
     const itemCheck = await pool.query(
       `SELECT mi.* FROM menu_items mi
        JOIN menu_categories mc ON mi.category_id = mc.category_id
        WHERE mi.menu_item_id = $1 AND mc.restaurant_id = $2`,
       [menu_item_id, restaurant_id]
     );
-
     if (itemCheck.rows.length === 0) {
       return res
         .status(404)
         .json({ message: "Menu item not found or not authorized" });
     }
-
-    const imageUrl = itemCheck.rows[0].menu_item_image_url;
-
-    if (imageUrl) {
-      const publicIdMatch = imageUrl.match(
-        /\/upload\/(?:v\d+\/)?(.+)\.[a-zA-Z]+$/
-      );
-      const publicId = publicIdMatch?.[1];
-
-      if (publicId) {
-        await cloudinary.uploader.destroy(publicId);
-      }
-    }
-
-    await pool.query(`DELETE FROM menu_items WHERE menu_item_id = $1`, [
-      menu_item_id,
-    ]);
-
+    const update = await pool.query(
+      "UPDATE menu_items set is_active = false WHERE menu_item_id = $1 returning *",
+      [menu_item_id]
+    );
+    console.log(update.rows);
     res
       .status(200)
       .json({ status: "success", message: "Menu item deleted successfully" });
@@ -391,15 +376,68 @@ export const delete_menu = async (req, res) => {
     console.log("Error in delete_menu controller", err.message);
     res.status(500).json({ message: "internal server error" });
   }
+
+  // try {
+  //   // Verify the item belongs to this restaurant
+  //   const itemCheck = await pool.query(
+  //     `SELECT mi.* FROM menu_items mi
+  //      JOIN menu_categories mc ON mi.category_id = mc.category_id
+  //      WHERE mi.menu_item_id = $1 AND mc.restaurant_id = $2`,
+  //     [menu_item_id, restaurant_id]
+  //   );
+
+  //   if (itemCheck.rows.length === 0) {
+  //     return res
+  //       .status(404)
+  //       .json({ message: "Menu item not found or not authorized" });
+  //   }
+
+  //   const imageUrl = itemCheck.rows[0].menu_item_image_url;
+
+  //   if (imageUrl) {
+  //     const publicIdMatch = imageUrl.match(
+  //       /\/upload\/(?:v\d+\/)?(.+)\.[a-zA-Z]+$/
+  //     );
+  //     const publicId = publicIdMatch?.[1];
+
+  //     if (publicId) {
+  //       await cloudinary.uploader.destroy(publicId);
+  //     }
+  //   }
+
+  //   await pool.query(`DELETE FROM menu_items WHERE menu_item_id = $1`, [
+  //     menu_item_id,
+  //   ]);
+
+  //   res
+  //     .status(200)
+  //     .json({ status: "success", message: "Menu item deleted successfully" });
+  // } catch (err) {
+  //   console.log("Error in delete_menu controller", err.message);
+  //   res.status(500).json({ message: "internal server error" });
+  // }
 };
 
 export const get_menu = async (req, res) => {
   const restaurant_id = req.user.id;
   try {
     const item = await pool.query(
-      "SELECT M.MENU_ITEM_ID,M.CATEGORY_ID,M.NAME,M.DESCRIPTION,M.PRICE,M.IS_AVAILABLE,M.MENU_ITEM_IMAGE_URL,M.DISCOUNT,C.NAME AS CATEGORY_NAME,C.MENU_CATEGORY_IMAGE_URL AS CATEGORY_IMAGE FROM MENU_ITEMS M JOIN MENU_CATEGORIES C ON (M.CATEGORY_ID = C.CATEGORY_ID) WHERE C.RESTAURANT_ID = $1",
+      `SELECT 
+        M.MENU_ITEM_ID,
+        M.CATEGORY_ID,
+        M.NAME,M.DESCRIPTION,
+        M.PRICE,M.IS_AVAILABLE,
+        M.MENU_ITEM_IMAGE_URL,
+        M.DISCOUNT,
+        C.NAME AS CATEGORY_NAME,
+        C.MENU_CATEGORY_IMAGE_URL AS CATEGORY_IMAGE 
+      FROM MENU_ITEMS M 
+      JOIN MENU_CATEGORIES C ON (M.CATEGORY_ID = C.CATEGORY_ID) 
+      WHERE 
+        C.RESTAURANT_ID = $1 AND M.is_active = true`,
       [restaurant_id]
     );
+    //console.log(item.rows);
     res.json(item.rows);
   } catch (err) {
     console.log("Error in get_menu controller", err.message);

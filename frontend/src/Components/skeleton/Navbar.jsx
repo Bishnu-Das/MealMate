@@ -77,7 +77,7 @@ const Navbar = () => {
       <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
         {/* Logo */}
         <Link to="/" className="text-2xl font-bold">
-          BhojPotro
+          MealMate
         </Link>
 
         {/* Desktop Links */}
