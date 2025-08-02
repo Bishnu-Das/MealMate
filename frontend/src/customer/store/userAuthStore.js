@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { axiosInstance } from "../../lib/axios";
+import { axiosInstance } from "../../../lib/axios";
 import toast from "react-hot-toast";
 import { data } from "react-router-dom";
 import axios from "axios";

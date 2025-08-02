@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Routes, Route, Navigate, useParams } from "react-router-dom";
 import { Loader } from "lucide-react";
 
-import { userAuthStore } from "./store/userAuthStore";
+import { userAuthStore } from "./customer/store/userAuthStore";
 import { restaurantAuthStore } from "./restaurant/store/restaurantAuthStore";
 import { useRiderAuthStore } from "./rider/store/riderAuthStore";
 

@@ -1,5 +1,5 @@
 import axios from "axios";
-import { userAuthStore } from "../src/store/userAuthStore";
+import { userAuthStore } from "../src/customer/store/userAuthStore";
 
 export const axiosInstance = axios.create({
   // baseURL: "http://192.168.0.101:5001/api",

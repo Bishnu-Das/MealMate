@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useRef } from "react";
-import RestaurantCard from "../../Components/cards/RestaurantCard";
-import { useRestaurantStore } from "../../store/useRestaurantStore";
+import RestaurantCard from "../Components/cards/RestaurantCard";
+import { useRestaurantStore } from "../store/useRestaurantStore";
 import { Loader2, Search } from "lucide-react";
-import Navbar from "../../Components/skeleton/Navbar";
+import Navbar from "../Components/skeleton/Navbar";
 
 const RestaurantPage = () => {
   const { restaurants, getrestaurants, searchRestaurantsByName, loading } =

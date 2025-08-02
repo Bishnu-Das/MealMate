@@ -5,7 +5,7 @@ import { Input } from "../components/ui/input";
 import { restaurantAuthStore } from "../store/restaurantAuthStore";
 import socketService from "../../services/socketService";
 import toast from "react-hot-toast";
-import { useNotificationStore } from "../../store/notificationStore";
+import { useNotificationStore } from "../../customer/store/notificationStore";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 
 const HeaderRest = ({ onLogout }) => {

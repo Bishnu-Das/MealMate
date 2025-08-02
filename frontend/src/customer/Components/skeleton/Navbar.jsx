@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Menu, X } from "lucide-react";
-import { userAuthStore } from "../../customer/store/userAuthStore";
-import { useRiderAuthStore } from "../../rider/store/riderAuthStore";
+import { userAuthStore } from "../../store/userAuthStore";
+import { useRiderAuthStore } from "../../../rider/store/riderAuthStore";
 
 const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);

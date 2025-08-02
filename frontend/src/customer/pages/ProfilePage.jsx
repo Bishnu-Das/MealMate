@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { userAuthStore } from "../../store/userAuthStore";
-import Navbar from "../../Components/skeleton/Navbar";
-import LocationPickerModal from "../../Components/LocationPickerModal";
+import { userAuthStore } from "../store/userAuthStore";
+import Navbar from "../Components/skeleton/Navbar";
+import LocationPickerModal from "../Components/LocationPickerModal";
 
 function Profile() {
   const navigate = useNavigate();

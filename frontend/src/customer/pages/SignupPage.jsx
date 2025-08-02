@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Loader2 } from "lucide-react";
-import { userAuthStore } from "../../store/userAuthStore";
+import { userAuthStore } from "../store/userAuthStore";
 import { useNavigate } from "react-router-dom";
-import Navbar from "../../Components/skeleton/Navbar";
+import Navbar from "../Components/skeleton/Navbar";
 
 function Signup() {
   const navigate = useNavigate();

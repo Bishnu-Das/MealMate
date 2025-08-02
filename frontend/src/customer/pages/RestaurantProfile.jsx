@@ -3,15 +3,15 @@ import { Search } from "lucide-react";
 import toast from "react-hot-toast";
 
 import { Input } from "../../restaurant/components/ui/input";
-import { RestaurantHeader } from "../../Components/restprof/RestaurantHeader";
-import { FoodItem } from "../../Components/restprof/FoodItem";
-import { CartSidebar } from "../../Components/restprof/CartSidebar";
-import { FoodFilter } from "../../Components/restprof/FoodFilter";
+import { RestaurantHeader } from "../Components/restprof/RestaurantHeader";
+import { FoodItem } from "../Components/restprof/FoodItem";
+import { CartSidebar } from "../Components/restprof/CartSidebar";
+import { FoodFilter } from "../Components/restprof/FoodFilter";
 import { axiosInstance } from "../../../lib/axios";
-import { useCartStore } from "../../store/cartStore";
-import { userAuthStore } from "../../store/userAuthStore";
+import { useCartStore } from "../store/cartStore";
+import { userAuthStore } from "../store/userAuthStore";
 import { useNavigate, useParams } from "react-router-dom";
-import Navbar from "../../Components/skeleton/Navbar";
+import Navbar from "../Components/skeleton/Navbar";
 
 export default function Restaurant() {
   const [activeCategory, setActiveCategory] = useState("Popular");

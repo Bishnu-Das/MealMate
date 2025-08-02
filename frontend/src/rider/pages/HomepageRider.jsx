@@ -24,7 +24,7 @@ import ChatModal from "../../Components/ChatModal";
 import { axiosInstance } from "../../../lib/axios";
 import toast from "react-hot-toast";
 import socketService from "../../services/socketService";
-import { useNotificationStore } from "../../store/notificationStore";
+import { useNotificationStore } from "../../customer/store/notificationStore";
 
 const HomepageRider = () => {
   const [dashboardData, setDashboardData] = useState({

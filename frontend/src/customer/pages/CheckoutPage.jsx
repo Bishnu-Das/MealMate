@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { useCartStore } from "../../store/cartStore";
+import { useCartStore } from "../store/cartStore";
 import { Button } from "../../restaurant/components/ui/button";
 import {
   RadioGroup,
@@ -11,7 +11,7 @@ import { axiosInstance } from "../../../lib/axios";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 
-import { userAuthStore } from "../../store/userAuthStore";
+import { userAuthStore } from "../store/userAuthStore";
 import toast from "react-hot-toast";
 
 const CheckoutPage = () => {

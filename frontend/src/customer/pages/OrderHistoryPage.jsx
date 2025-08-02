@@ -10,7 +10,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "../../restaurant/components/ui/dialog";
-import RatingModal from "../../Components/RatingModal";
+import RatingModal from "../Components/RatingModal";
 
 const OrderHistoryPage = () => {
   const [isRatingModalOpen, setIsRatingModalOpen] = useState(false);

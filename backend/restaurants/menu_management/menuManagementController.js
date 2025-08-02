@@ -327,9 +327,12 @@ export const get_menu_categories = async (req, res) => {
       [restaurant_id]
     );
 
-    // Extract names into a flat array
-    const categoryNames = result.rows.map((row) => row.name);
-    categoryNames.unshift("All");
+    // Extract names into a Set to remove duplicates
+    const categorySet = new Set(result.rows.map((row) => row.name));
+
+    // Convert Set back to array and prepend "All"
+    const categoryNames = ["All", ...categorySet];
+
     res.json(categoryNames);
   } catch (err) {
     console.error("Error in get_categories:", err.message);
