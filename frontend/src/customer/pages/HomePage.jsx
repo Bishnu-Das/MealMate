@@ -1,15 +1,15 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
-import HeroSection from "../components/HeroSection";
-import FeaturesSection from "../components/FeaturesSection";
-import FeaturedRestaurants from "../components/FeaturedRestaurants";
-import CTASection from "../components/CTASection";
-import { useRestaurantStore } from "../store/useRestaurantStore";
-import FeaturedCategories from "../Components/FeaturedCategory";
-import Navbar from "../Components/skeleton/Navbar";
-import socketService from "../services/socketService";
-import { userAuthStore } from "../store/userAuthStore";
+import HeroSection from "../../components/HeroSection";
+import FeaturesSection from "../../components/FeaturesSection";
+import FeaturedRestaurants from "../../components/FeaturedRestaurants";
+import CTASection from "../../components/CTASection";
+import { useRestaurantStore } from "../../store/useRestaurantStore";
+import FeaturedCategories from "../../Components/FeaturedCategory";
+import Navbar from "../../Components/skeleton/Navbar";
+import socketService from "../../services/socketService";
+import { userAuthStore } from "../../store/userAuthStore";
 import { Bell } from "lucide-react";
-import { useNotificationStore } from "../store/notificationStore";
+import { useNotificationStore } from "../../store/notificationStore";
 
 const Home = () => {
   const { restaurants, categories, getrestaurants, loading, getcategories } =

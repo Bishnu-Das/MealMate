@@ -16,7 +16,7 @@ export const userAuthStore = create((set, get) => ({
 
   checkAuth: async () => {
     try {
-      const res = await axiosInstance.get("/customer/is-varify");
+      const res = await axiosInstance.get("/customer/auth/is-varify");
       set({ authUser: { ...res.data, role: "customer" } });
     } catch (err) {
       console.log("Error in checkAuth", err);
@@ -28,7 +28,7 @@ export const userAuthStore = create((set, get) => ({
   login: async (data) => {
     set({ isLoggingIn: true });
     try {
-      const res = await axiosInstance.post("/customer/login", data);
+      const res = await axiosInstance.post("/customer/auth/login", data);
       console.log("logged in user:", res.data);
       set({ authUser: { ...res.data, role: "customer" } });
       console.log("auth user:", get().authUser);
@@ -42,7 +42,7 @@ export const userAuthStore = create((set, get) => ({
   signup: async (data) => {
     set({ isSigningUp: true });
     try {
-      const res = await axiosInstance.post("/customer/register", data);
+      const res = await axiosInstance.post("/customer/auth/register", data);
       set({ authUser: { ...res.data, role: "customer" } });
       toast.success("Signed up successfully");
     } catch (err) {
@@ -56,7 +56,7 @@ export const userAuthStore = create((set, get) => ({
     const getrestaurants = useRestaurantStore.getState().getrestaurants;
     const getcategories = useRestaurantStore.getState().getcategories;
     try {
-      await axiosInstance.get("/customer/logout");
+      await axiosInstance.get("/customer/auth/logout");
       set({ authUser: null });
       await new Promise((resolve) => setTimeout(resolve, 0));
       await getrestaurants();
@@ -69,7 +69,10 @@ export const userAuthStore = create((set, get) => ({
   updateProfile: async (data) => {
     console.log("data in store", data);
     try {
-      const res = await axiosInstance.put("/customer/update_profile", data);
+      const res = await axiosInstance.put(
+        "/customer/auth/update_profile",
+        data
+      );
       set({ authUser: res.data });
       toast.success("updated profile successfully");
     } catch (err) {

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import { userAuthStore } from "../store/userAuthStore";
+import { userAuthStore } from "../../store/userAuthStore";
 import { Loader2 } from "lucide-react";
-import Navbar from "../Components/skeleton/Navbar";
+import Navbar from "../../Components/skeleton/Navbar";
 
 function Login() {
   const [showPassword, setShowPassword] = useState(false);

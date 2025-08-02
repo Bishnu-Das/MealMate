@@ -59,9 +59,7 @@ const AnalyticsRest = () => {
 
   const getDailyRevenue = async () => {
     try {
-      const response = await axiosInstance.get(
-        "restaurant/stats/daily_revenue"
-      );
+      const response = await axiosInstance.get("restaurant/stat/daily_revenue");
       return response.data;
     } catch (err) {
       console.error("Error fetching recent orders:", err.message);
@@ -74,10 +72,10 @@ const AnalyticsRest = () => {
       try {
         const [revenueRes, orderRes, customerRes, restData] = await Promise.all(
           [
-            axiosInstance.get("/restaurant/stats/last_two_week_revenue"),
-            axiosInstance.get("/restaurant/stats/last_two_week_order_count"),
-            axiosInstance.get("/restaurant/stats/last_two_week_new_customer"),
-            axiosInstance.get("/restaurant/get_restaurant_profile"),
+            axiosInstance.get("/restaurant/stat/last_two_week_revenue"),
+            axiosInstance.get("/restaurant/stat/last_two_week_order_count"),
+            axiosInstance.get("/restaurant/stat/last_two_week_new_customer"),
+            axiosInstance.get("/restaurant/profile/get_restaurant_profile"),
           ]
         );
         console.log("restaurant data: ", restData.data);
@@ -107,7 +105,7 @@ const AnalyticsRest = () => {
   const getTopItems = async () => {
     try {
       const response = await axiosInstance.get(
-        "restaurant/stats/top_selling_items"
+        "restaurant/stat/top_selling_items"
       );
       return response.data;
     } catch (err) {
@@ -128,7 +126,7 @@ const AnalyticsRest = () => {
   const getWeeklyRevenue = async () => {
     try {
       const response = await axiosInstance.get(
-        "restaurant/stats/monthly_revenue"
+        "restaurant/stat/monthly_revenue"
       );
       return response.data;
     } catch (err) {
@@ -149,7 +147,7 @@ const AnalyticsRest = () => {
   const getCategoryData = async () => {
     try {
       const response = await axiosInstance.get(
-        "restaurant/stats/category_wise_sell"
+        "restaurant/stat/category_wise_sell"
       );
       return response.data;
     } catch (err) {

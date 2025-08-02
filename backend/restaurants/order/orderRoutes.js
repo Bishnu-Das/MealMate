@@ -4,8 +4,7 @@ import authorizeRoles from "../../middleware/athorizeRoles.js";
 import {
   getOrders,
   getRecentOrders,
-  todaysOrderStat,
-  updateStatus,
+  updateOrderStatus,
 } from "./orderController.js";
 
 const restaurantOrder = express.Router();
@@ -25,17 +24,18 @@ restaurantOrder.get(
   getOrders
 );
 
+// restaurantOrder.put(
+//   "/update_order_status",
+//   authorization,
+//   authorizeRoles(role),
+//   updateStatus
+// );
+
 restaurantOrder.put(
-  "/update_order_status",
+  "/:orderId/status",
   authorization,
   authorizeRoles(role),
-  updateStatus
-);
-restaurantOrder.get(
-  "/today_stat",
-  authorization,
-  authorizeRoles(role),
-  todaysOrderStat
+  updateOrderStatus
 );
 
 export default restaurantOrder;

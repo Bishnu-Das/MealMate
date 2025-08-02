@@ -1,5 +1,8 @@
-import pool from "../db.js";
-import { generateToken } from "../utils/jwtGenerator.js";
+// import pool from "../db.js";
+// import { generateToken } from "../utils/jwtGenerator.js";
+// import bcrypt from "bcrypt";
+import pool from "../../db.js";
+import { generateToken } from "../../utils/jwtGenerator.js";
 import bcrypt from "bcrypt";
 
 export const signup = async (req, res) => {
@@ -63,7 +66,6 @@ export const signup = async (req, res) => {
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
-
 
 export const login = async (req, res) => {
   const { email, password } = req.body;
@@ -158,32 +160,3 @@ export const varify = async (req, res) => {
     res.status(500).json({ message: "internal server error" });
   }
 };
-
-
-// export const getDeliveryHistory = async (req, res) => {
-//   try {
-//     const riderId = req.user.id; // Assuming user ID is available from authorization middleware
-
-//     const history = await pool.query(
-//       `SELECT
-//         o.order_id,
-//         o.total_amount,
-//         o.status,
-//         o.delivered_at,
-//         r.name AS restaurant_name,
-//         u.name AS customer_name,
-//         u.email AS customer_email
-//       FROM orders o
-//       JOIN restaurants r ON o.restaurant_id = r.restaurant_id
-//       JOIN users u ON o.user_id = u.user_id
-//       WHERE o.rider_id = $1 AND o.status = 'delivered'
-//       ORDER BY o.delivered_at DESC`,
-//       [riderId]
-//     );
-
-//     res.status(200).json(history.rows);
-//   } catch (err) {
-//     console.error("Error fetching delivery history:", err.message);
-//     res.status(500).json({ message: "Server error", error: err.message });
-//   }
-// };

@@ -53,6 +53,7 @@ export const getRestaurants = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
 export const getRestaurantsSearchByName = async (req, res) => {
   const rest_name = req.query.name;
 

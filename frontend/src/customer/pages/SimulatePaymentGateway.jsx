@@ -1,12 +1,12 @@
-import React from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { Button } from '../restaurant/components/ui/button';
+import React from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { Button } from "../../restaurant/components/ui/button";
 
 const SimulatePaymentGateway = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const queryParams = new URLSearchParams(location.search);
-  const paymentId = queryParams.get('paymentId');
+  const paymentId = queryParams.get("paymentId");
 
   const handleConfirm = () => {
     window.location.href = `/api/customer/payment/confirm?paymentId=${paymentId}&status=success`;
@@ -22,7 +22,9 @@ const SimulatePaymentGateway = () => {
       <p className="mb-4 text-gray-700">You are about to make a payment.</p>
       <div className="space-x-4">
         <Button onClick={handleConfirm}>Confirm Payment</Button>
-        <Button onClick={handleCancel} variant="destructive">Cancel Payment</Button>
+        <Button onClick={handleCancel} variant="destructive">
+          Cancel Payment
+        </Button>
       </div>
     </div>
   );

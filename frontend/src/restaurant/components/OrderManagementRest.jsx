@@ -240,7 +240,7 @@ function OrderManagement() {
 
   const fetchOrders = useCallback(async () => {
     try {
-      const response = await axios.get("/api/restaurant/orders");
+      const response = await axios.get("/api/restaurant/order/all_orders");
       setOrderList(response.data);
       console.log(response.data);
     } catch (error) {
@@ -257,7 +257,7 @@ function OrderManagement() {
         )
       );
       try {
-        await axios.put(`/api/restaurant/orders/${orderId}/status`, {
+        await axios.put(`/api/restaurant/order/${orderId}/status`, {
           status: newStatus,
         });
       } catch (error) {
@@ -283,7 +283,7 @@ function OrderManagement() {
         )
       );
       try {
-        await axios.put(`/api/restaurant/orders/${orderId}/status`, {
+        await axios.put(`/api/restaurant/order/${orderId}/status`, {
           status: "restaurant_rejected",
         });
       } catch (error) {

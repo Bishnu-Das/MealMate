@@ -1,10 +1,16 @@
-import React, { useEffect, useState } from 'react';
-import { axiosInstance } from '../../lib/axios';
-import { Button } from '../restaurant/components/ui/button';
-import { useNavigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../restaurant/components/ui/dialog';
-import RatingModal from '../Components/RatingModal';
+import React, { useEffect, useState } from "react";
+import { axiosInstance } from "../../../lib/axios";
+import { Button } from "../../restaurant/components/ui/button";
+import { useNavigate } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "../../restaurant/components/ui/dialog";
+import RatingModal from "../../Components/RatingModal";
 
 const OrderHistoryPage = () => {
   const [isRatingModalOpen, setIsRatingModalOpen] = useState(false);
@@ -17,11 +23,11 @@ const OrderHistoryPage = () => {
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        const res = await axiosInstance.get('/customer/order');
+        const res = await axiosInstance.get("/customer/order");
         setOrders(res.data);
       } catch (error) {
-        console.error('Failed to fetch orders:', error);
-        setError('Failed to load orders. Please try again later.');
+        console.error("Failed to fetch orders:", error);
+        setError("Failed to load orders. Please try again later.");
       } finally {
         setLoading(false);
       }
@@ -35,13 +41,20 @@ const OrderHistoryPage = () => {
   }
 
   if (error) {
-    return <div className="container mx-auto p-4 text-red-500">Error: {error}</div>;
+    return (
+      <div className="container mx-auto p-4 text-red-500">Error: {error}</div>
+    );
   }
 
   return (
     <div className="container mx-auto p-4 min-h-screen bg-gray-50 text-gray-800">
       <div className="flex items-center mb-6">
-        <Button variant="ghost" size="icon" onClick={() => navigate('/')} className="mr-2">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => navigate("/")}
+          className="mr-2"
+        >
           <ArrowLeft />
         </Button>
         <h1 className="text-3xl font-bold text-gray-900">My Orders</h1>
@@ -50,9 +63,14 @@ const OrderHistoryPage = () => {
       <div className="space-y-6">
         {orders.length > 0 ? (
           orders.map((order) => (
-            <div key={order.order_id} className="bg-white p-6 rounded-lg shadow-md">
+            <div
+              key={order.order_id}
+              className="bg-white p-6 rounded-lg shadow-md"
+            >
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-semibold text-pink-600">{order.restaurant_name}</h2>
+                <h2 className="text-xl font-semibold text-pink-600">
+                  {order.restaurant_name}
+                </h2>
                 <span className="text-sm text-gray-500">
                   {new Date(order.created_at).toLocaleDateString()}
                 </span>
@@ -62,52 +80,64 @@ const OrderHistoryPage = () => {
                 <div>
                   <p className="text-gray-700">Order ID: {order.order_id}</p>
                   <p className="text-gray-700">
-                    Status:{' '}
+                    Status:{" "}
                     <span
                       className={`font-semibold ${
-                        order.status === 'delivered'
-                          ? 'text-green-600'
-                          : order.status === 'cancelled'
-                          ? 'text-red-600'
-                          : 'text-yellow-600'
+                        order.status === "delivered"
+                          ? "text-green-600"
+                          : order.status === "cancelled"
+                          ? "text-red-600"
+                          : "text-yellow-600"
                       }`}
                     >
                       {order.status}
                     </span>
                   </p>
                 </div>
-                <p className="text-lg font-bold text-gray-900">${order.total_amount}</p>
+                <p className="text-lg font-bold text-gray-900">
+                  ${order.total_amount}
+                </p>
               </div>
 
-              {order.status === 'delivered' && (
+              {order.status === "delivered" && (
                 <div className="mt-4 flex gap-2">
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => {
-                      setRatingTarget({ type: 'restaurant', id: order.restaurant_id, orderId: order.order_id });
+                      setRatingTarget({
+                        type: "restaurant",
+                        id: order.restaurant_id,
+                        orderId: order.order_id,
+                      });
                       setIsRatingModalOpen(true);
                     }}
                     disabled={order.has_restaurant_review}
                   >
-                    {order.has_restaurant_review ? 'Restaurant Rated' : 'Rate Restaurant'}
+                    {order.has_restaurant_review
+                      ? "Restaurant Rated"
+                      : "Rate Restaurant"}
                   </Button>
                   {order.rider_id && ( // Only show if a rider was assigned
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => {
-                        setRatingTarget({ type: 'rider', id: order.rider_id, orderId: order.order_id });
+                        setRatingTarget({
+                          type: "rider",
+                          id: order.rider_id,
+                          orderId: order.order_id,
+                        });
                         setIsRatingModalOpen(true);
                       }}
                       disabled={order.has_rider_review}
                     >
-                      {order.has_rider_review ? 'Rider Rated' : 'Rate Rider'}
+                      {order.has_rider_review ? "Rider Rated" : "Rate Rider"}
                     </Button>
                   )}
                 </div>
               )}
-              {order.status === 'out_for_delivery' && (
+              {order.status === "out_for_delivery" && (
                 <div className="mt-4 flex gap-2">
                   <Button
                     variant="outline"
@@ -148,9 +178,7 @@ const OrderHistoryPage = () => {
                 return {
                   ...order,
                   has_restaurant_review:
-                    type === "restaurant"
-                      ? true
-                      : order.has_restaurant_review,
+                    type === "restaurant" ? true : order.has_restaurant_review,
                   has_rider_review:
                     type === "rider" ? true : order.has_rider_review,
                 };

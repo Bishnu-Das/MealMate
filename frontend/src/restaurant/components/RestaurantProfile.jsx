@@ -37,66 +37,68 @@ function RestaurantProfile() {
     Sun: "sunday",
   };
   React.useEffect(() => {
-    axiosInstance.get("/restaurant/get_restaurant_profile").then((res) => {
-      const data = res.data;
-      console.log("restaurnat profile: ", data);
-      setRestaurantName(data.restaurant_name || "");
-      setCuisineType(data.cuisine_type || "");
-      setDescription(data.description || "");
-      setPhone(data.phone || "");
-      setEmail(data.email || "");
-      setDeliveryFee(data.delivery_settings?.delivery_fee || "");
-      setMinOrder(data.delivery_settings?.min_order || "");
-      setDeliveryTime(data.delivery_settings?.delivery_time || "");
-      setDeliveryRadius(data.delivery_settings?.delivery_radius || "");
-      setCustomerRating(data.rating);
-      setAddress({
-        city: data.city,
-        street: data.street,
-        postal_code: data.postal_code,
-      });
+    axiosInstance
+      .get("/restaurant/profile/get_restaurant_profile")
+      .then((res) => {
+        const data = res.data;
+        console.log("restaurnat profile: ", data);
+        setRestaurantName(data.restaurant_name || "");
+        setCuisineType(data.cuisine_type || "");
+        setDescription(data.description || "");
+        setPhone(data.phone || "");
+        setEmail(data.email || "");
+        setDeliveryFee(data.delivery_settings?.delivery_fee || "");
+        setMinOrder(data.delivery_settings?.min_order || "");
+        setDeliveryTime(data.delivery_settings?.delivery_time || "");
+        setDeliveryRadius(data.delivery_settings?.delivery_radius || "");
+        setCustomerRating(data.rating);
+        setAddress({
+          city: data.city,
+          street: data.street,
+          postal_code: data.postal_code,
+        });
 
-      setImagePreview(
-        data.restaurant_image ||
-          "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=400&h=300&fit=crop"
-      );
-      setDescription(data.description);
-      setCuisineType(data.cuisine_type);
+        setImagePreview(
+          data.restaurant_image ||
+            "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=400&h=300&fit=crop"
+        );
+        setDescription(data.description);
+        setCuisineType(data.cuisine_type);
 
-      // Initialize location state from backend data
-      setLocation({
-        lat: data.latitude || null, // <-- Adjust keys if different
-        lng: data.longitude || null,
-      });
+        // Initialize location state from backend data
+        setLocation({
+          lat: data.latitude || null, // <-- Adjust keys if different
+          lng: data.longitude || null,
+        });
 
-      // Map backend operating_hours to state for all days
-      const backendHoursMap = {};
-      (data.operating_hours || []).forEach((h) => {
-        const fullDay =
-          dayAbbrToFull[h.day_of_week] || h.day_of_week.toLowerCase();
-        backendHoursMap[fullDay] = h;
+        // Map backend operating_hours to state for all days
+        const backendHoursMap = {};
+        (data.operating_hours || []).forEach((h) => {
+          const fullDay =
+            dayAbbrToFull[h.day_of_week] || h.day_of_week.toLowerCase();
+          backendHoursMap[fullDay] = h;
+        });
+        setOperatingHours(
+          days.map((day) => {
+            const key = day.toLowerCase();
+            if (backendHoursMap[key]) {
+              return {
+                day,
+                enabled: true,
+                open: backendHoursMap[key].open_time,
+                close: backendHoursMap[key].close_time,
+              };
+            } else {
+              return {
+                day,
+                enabled: false,
+                open: "09:00",
+                close: "22:00",
+              };
+            }
+          })
+        );
       });
-      setOperatingHours(
-        days.map((day) => {
-          const key = day.toLowerCase();
-          if (backendHoursMap[key]) {
-            return {
-              day,
-              enabled: true,
-              open: backendHoursMap[key].open_time,
-              close: backendHoursMap[key].close_time,
-            };
-          } else {
-            return {
-              day,
-              enabled: false,
-              open: "09:00",
-              close: "22:00",
-            };
-          }
-        })
-      );
-    });
   }, []);
   // Initialize state with backend data
   const [restaurantName, setRestaurantName] = React.useState("");
@@ -189,7 +191,7 @@ function RestaurantProfile() {
 
     try {
       setIsUpdatingProfile(true);
-      await axiosInstance.post("/restaurant/edit_profile", formData, {
+      await axiosInstance.post("/restaurant/profile/edit_profile", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },

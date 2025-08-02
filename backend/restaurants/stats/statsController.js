@@ -248,3 +248,69 @@ export const getLastTwoWeekNewCustomer = async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 };
+
+export const todaysOrderStat = async (req, res) => {
+  const restaurant_id = req.user.id;
+
+  try {
+    const result = await pool.query(
+      `
+      SELECT
+        -- Revenue
+        SUM(CASE WHEN DATE(created_at) = CURRENT_DATE THEN total_amount ELSE 0 END)::FLOAT AS revenue_today,
+        SUM(CASE WHEN DATE(created_at) = CURRENT_DATE - INTERVAL '1 day' THEN total_amount ELSE 0 END)::FLOAT AS revenue_yesterday,
+
+        -- Orders
+        COUNT(CASE WHEN DATE(created_at) = CURRENT_DATE THEN 1 END) AS orders_today,
+        COUNT(CASE WHEN DATE(created_at) = CURRENT_DATE - INTERVAL '1 day' THEN 1 END) AS orders_yesterday
+      FROM orders
+      WHERE restaurant_id = $1 AND status = 'delivered'
+      `,
+      [restaurant_id]
+    );
+
+    const { revenue_today, revenue_yesterday, orders_today, orders_yesterday } =
+      result.rows[0];
+
+    const avgOrderValueToday =
+      orders_today > 0 ? revenue_today / orders_today : 0;
+    const avgOrderValueYesterday =
+      orders_yesterday > 0 ? revenue_yesterday / orders_yesterday : 0;
+
+    const calcChange = (today, yesterday) => {
+      if (yesterday === 0) return { change: "+100%", type: "increase" };
+      const diff = today - yesterday;
+      const percent = ((diff / yesterday) * 100).toFixed(1);
+      return {
+        change: `${diff >= 0 ? "+" : ""}${percent}%`,
+        type: diff >= 0 ? "increase" : "decrease",
+      };
+    };
+
+    const stats = [
+      {
+        title: "Today's Revenue",
+        value: `$${revenue_today?.toFixed(2) || "0.00"}`,
+        ...calcChange(revenue_today, revenue_yesterday),
+        description: "vs yesterday",
+      },
+      {
+        title: "Orders Today",
+        value: `${orders_today}`,
+        ...calcChange(orders_today, orders_yesterday),
+        description: "vs yesterday",
+      },
+      {
+        title: "Avg Order Value",
+        value: `$${avgOrderValueToday.toFixed(2)}`,
+        ...calcChange(avgOrderValueToday, avgOrderValueYesterday),
+        description: "vs yesterday",
+      },
+    ];
+
+    res.json(stats);
+  } catch (err) {
+    console.error("Error in today's order stat:", err.message);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};

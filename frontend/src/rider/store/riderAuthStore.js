@@ -10,10 +10,13 @@ export const useRiderAuthStore = create((set) => ({
 
   checkAuthRider: async () => {
     try {
-      const res = await axiosInstance.get("/rider/is-verify");
+      const res = await axiosInstance.get("/rider/auth/is-verify");
       set((state) => {
-        if (JSON.stringify(state.authrider) !== JSON.stringify({ ...res.data, role: 'rider' })) {
-          return { authrider: { ...res.data, role: 'rider' } };
+        if (
+          JSON.stringify(state.authrider) !==
+          JSON.stringify({ ...res.data, role: "rider" })
+        ) {
+          return { authrider: { ...res.data, role: "rider" } };
         }
         return {};
       });
@@ -27,7 +30,7 @@ export const useRiderAuthStore = create((set) => ({
   login: async (data) => {
     set({ isLoggingIn: true });
     try {
-      const res = await axiosInstance.post("/rider/login", data);
+      const res = await axiosInstance.post("/rider/auth/login", data);
       set({ authrider: res.data });
       toast.success("Logged in successfully");
     } catch (err) {
@@ -40,7 +43,7 @@ export const useRiderAuthStore = create((set) => ({
   signup: async (data) => {
     set({ isSigningUp: true });
     try {
-      const res = await axiosInstance.post("/rider/signup", data);
+      const res = await axiosInstance.post("/rider/auth/signup", data);
       set({ authrider: res.data });
       toast.success("Signed up successfully");
     } catch (err) {
@@ -53,7 +56,7 @@ export const useRiderAuthStore = create((set) => ({
   logout: async () => {
     set({ isLoggingOut: true });
     try {
-      await axiosInstance.post("/rider/logout");
+      await axiosInstance.post("/rider/auth/logout");
       set({ authrider: null });
       toast.success("Logged out successfully");
     } catch (err) {

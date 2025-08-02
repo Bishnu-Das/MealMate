@@ -15,15 +15,6 @@ import { restaurantAuthStore } from "../store/restaurantAuthStore";
 import toast from "react-hot-toast";
 import { axiosInstance } from "../../../lib/axios";
 
-// const categories = [
-//   "Pizza",
-//   "Burgers",
-//   "Pasta",
-//   "Salads",
-//   "Desserts",
-//   "Beverages",
-// ];
-
 export const AddMenuItemRest = ({ onBack, onSave }) => {
   const { add_menu_item, isChangingMenu } = restaurantAuthStore();
   const [categories, setCategories] = useState([]);
@@ -43,7 +34,9 @@ export const AddMenuItemRest = ({ onBack, onSave }) => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const res = await axiosInstance.get("/restaurant/get_menu_categories");
+        const res = await axiosInstance.get(
+          "/restaurant/menu/get_menu_categories"
+        );
         const fetchedCategories = res.data;
 
         if (!fetchedCategories.includes("Other")) {

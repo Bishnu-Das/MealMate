@@ -6,11 +6,11 @@ import { userAuthStore } from "./store/userAuthStore";
 import { restaurantAuthStore } from "./restaurant/store/restaurantAuthStore";
 import { useRiderAuthStore } from "./rider/store/riderAuthStore";
 
-import HomePage from "./pages/HomePage";
-import LoginPage from "./pages/LoginPage";
-import SignupPage from "./pages/SignupPage";
-import ProfilePage from "./pages/ProfilePage";
-import RestaurantPage from "./pages/RestaurantPage";
+import HomePage from "./customer/pages/HomePage";
+import LoginPage from "./customer/pages/LoginPage";
+import SignupPage from "./customer/pages/SignupPage";
+import ProfilePage from "./customer/pages/ProfilePage";
+import RestaurantPage from "./customer/pages/RestaurantPage";
 import SignupPageRest from "./restaurant/pages/SignupPageRest";
 import LoginPageRider from "./rider/pages/LoginPageRider";
 import SignupPageRider from "./rider/pages/SignupPageRider";
@@ -20,17 +20,17 @@ import OrderDetailsPage from "./rider/pages/OrderDetailsPage";
 import ProfilePageRider from "./rider/pages/ProfilePageRider";
 import EarningsPage from "./rider/pages/EarningsPage";
 
-import OrderHistoryPage from "./pages/OrderHistoryPage";
+import OrderHistoryPage from "./customer/pages/OrderHistoryPage";
 
 import Navbar from "./Components/skeleton/Navbar";
 import HomepageRest from "./restaurant/pages/HomepageRest";
-import RestaurantProfie from "./pages/RestaurantProfile";
-import RestaurantReviewsPage from "./pages/RestaurantReviewsPage";
-import CheckoutPage from "./pages/CheckoutPage";
-import SimulatePaymentGateway from "./pages/SimulatePaymentGateway";
-import PaymentSuccessPage from "./pages/PaymentSuccessPage";
-import PaymentFailedPage from "./pages/PaymentFailedPage";
-import PaymentCancelledPage from "./pages/PaymentCancelledPage";
+import RestaurantProfie from "./customer/pages/RestaurantProfile";
+import RestaurantReviewsPage from "./customer/pages/RestaurantReviewsPage";
+import CheckoutPage from "./customer/pages/CheckoutPage";
+import SimulatePaymentGateway from "./customer/pages/SimulatePaymentGateway";
+import PaymentSuccessPage from "./customer/pages/PaymentSuccessPage";
+import PaymentFailedPage from "./customer/pages/PaymentFailedPage";
+import PaymentCancelledPage from "./customer/pages/PaymentCancelledPage";
 import { Toaster } from "./restaurant/components/ui/toaster";
 
 import { element } from "prop-types";

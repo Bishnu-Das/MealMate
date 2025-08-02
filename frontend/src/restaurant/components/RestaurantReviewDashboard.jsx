@@ -12,7 +12,7 @@ const RestaurantReviewDashboard = () => {
   useEffect(() => {
     const fetchMenuItems = async () => {
       try {
-        const res = await axiosInstance.get("/restaurant/get_menu_items");
+        const res = await axiosInstance.get("/restaurant/menu/get_menu_items");
         console.log(res.data);
         setMenuItems(res.data);
       } catch (err) {
@@ -38,8 +38,8 @@ const RestaurantReviewDashboard = () => {
       try {
         const url =
           selectedItemId === "all"
-            ? "/restaurant/reviews"
-            : `/restaurant/reviews/menu/${selectedItemId}`;
+            ? "/restaurant/review"
+            : `/restaurant/review/menu/${selectedItemId}`;
         const res = await axiosInstance.get(url);
 
         setReviews(res.data);

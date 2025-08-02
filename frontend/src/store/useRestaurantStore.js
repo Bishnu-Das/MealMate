@@ -15,12 +15,13 @@ export const useRestaurantStore = create((set, get) => ({
       let res;
 
       if (authUser) {
-        res = await axiosInstance.get("customer/nearby_restaurants");
+        res = await axiosInstance.get("customer/restaurant/nearby_restaurants");
       } else {
-        res = await axiosInstance.get("customer/getRestaurants");
+        res = await axiosInstance.get("customer/restaurant/getRestaurants");
       }
       // console.log("restaurants are: ");
-      console.log(res.data);
+      console.log("this is restaurant from store:", res.data);
+
       set({ restaurants: res.data });
     } catch (err) {
       console.error("Error fetching restaurants", err);
@@ -32,9 +33,12 @@ export const useRestaurantStore = create((set, get) => ({
   },
   searchRestaurantsByName: async (searchTerm) => {
     try {
-      const res = await axiosInstance.get("/customer/searchRestaurant", {
-        params: { name: searchTerm },
-      });
+      const res = await axiosInstance.get(
+        "/customer/restaurant/searchRestaurant",
+        {
+          params: { name: searchTerm },
+        }
+      );
       set({ restaurants: res.data });
       return res.data;
     } catch (err) {
@@ -44,7 +48,7 @@ export const useRestaurantStore = create((set, get) => ({
   },
   getcategories: async () => {
     try {
-      const res = await axiosInstance.get("customer/getCategories");
+      const res = await axiosInstance.get("customer/restaurant/getCategories");
       console.log("categories are: ", res.data);
       set({ categories: res.data });
     } catch (err) {

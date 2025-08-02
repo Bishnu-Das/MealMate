@@ -1,6 +1,6 @@
-import { generateToken } from "../utils/jwtGenerator.js";
+import { generateToken } from "../../utils/jwtGenerator.js";
 import bcrypt, { compareSync } from "bcrypt";
-import pool from "../db.js";
+import pool from "../../db.js";
 
 export const signup = async (req, res) => {
   try {
@@ -316,72 +316,3 @@ export const updateProfile = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
-
-// export const updateProfile = async (req, res) => {
-//   const id = req.user.id;
-
-//   const { name, phone, location, address } = req.body;
-//   const latitude = location.lat;
-//   const longitude = location.lng;
-
-//   const street = address.street;
-//   const city = address.city;
-//   const postal_code = address.postal_code;
-
-//   console.log(req.body);
-//   console.log(name, phone, latitude, longitude);
-//   try {
-//     // Try updating location
-//     let locationUpdate;
-//     if (latitude != null && longitude != null) {
-//       locationUpdate = await pool.query(
-//         "UPDATE user_locations SET latitude = $1, longitude = $2, street = $3, city = $4, postal_code = $5 WHERE user_id = $6 RETURNING *",
-//         [latitude, longitude, street, city, postal_code, id]
-//       );
-//     }
-
-//     // If no existing location, insert it
-//     if (latitude != null && longitude != null) {
-//       if (locationUpdate.rowCount === 0) {
-//         await pool.query(
-//           "INSERT INTO user_locations (user_id, latitude, longitude,street, city, postal_code, is_primary) VALUES ($1, $2, $3, $4,$5,$6,$7)",
-//           [id, latitude, longitude, street, city, postal_code, true]
-//         );
-//       }
-//     }
-//     if (
-//       (latitude == null || longitude == null) &&
-//       (street != "" || city != "" || postal_code != "")
-//     ) {
-//       locationUpdate = await pool.query(
-//         "UPDATE user_locations SET street = $1, city = $2, postal_code = $3 WHERE user_id = $4 RETURNING *",
-//         [street, city, postal_code, id]
-//       );
-//       if (locationUpdate.rowCount === 0) {
-//         await pool.query(
-//           "INSERT INTO user_locations (user_id,street,city,postal_code, is_primary) VALUES ($1, $2, $3, $4,$5)",
-//           [id, street, city, postal_code, true]
-//         );
-//       }
-//     }
-
-//     // Update name and phone
-//     const user = await pool.query(
-//       "UPDATE users SET name = $1, phone_number = $2 WHERE user_id = $3 returning *",
-//       [name, phone, id]
-//     );
-
-//     console.log("profile updated...", user.rows[0]);
-//     res.status(200).json({
-//       message: "updated profile successful",
-//       user_id: user.rows[0].user_id,
-//       name: user.rows[0].name,
-//       email: user.rows[0].email,
-//       phone_number: user.rows[0].phone_number,
-//       role_id: user.rows[0].role_id,
-//     });
-//   } catch (err) {
-//     console.error("Error in updateProfile:", err.message);
-//     res.status(500).json({ message: "Internal server error" });
-//   }
-// };

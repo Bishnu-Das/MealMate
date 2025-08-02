@@ -9,10 +9,18 @@ import {
   getLastTwoWeekRevenue,
   getLastWeekRevenueByDay,
   getTopSellingItems,
+  todaysOrderStat,
 } from "./statsController.js";
 
 const restaurnatStat = express.Router();
 const role = "restaurant";
+
+restaurnatStat.get(
+  "/today_stat",
+  authorization,
+  authorizeRoles(role),
+  todaysOrderStat
+);
 
 restaurnatStat.get(
   "/daily_revenue",

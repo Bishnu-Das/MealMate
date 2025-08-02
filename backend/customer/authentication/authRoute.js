@@ -1,23 +1,22 @@
 import express from "express";
-import validinfo from "../middleware/validinfo.js";
-import authorization from "../middleware/authorization.js";
-import authorizeRoles from "../middleware/athorizeRoles.js";
-
+import validinfo from "../../middleware/validinfo.js";
+import authorization from "../../middleware/authorization.js";
+import authorizeRoles from "../../middleware/athorizeRoles.js";
 import {
   changePassword,
-  login as customer_login,
-  signup as customer_signup,
   getProfile,
+  login,
   logout,
+  signup,
   updateProfile,
   varifyUser,
-} from "../controllers/auth.controller.js";
+} from "./auth.Controller.js";
 
 const router = express.Router();
 const role = "customer";
 
-router.post("/register", validinfo, customer_signup);
-router.post("/login", validinfo, customer_login);
+router.post("/register", validinfo, signup);
+router.post("/login", validinfo, login);
 router.get("/logout", logout);
 router.get("/is-varify", authorization, authorizeRoles(role), varifyUser);
 router.put(

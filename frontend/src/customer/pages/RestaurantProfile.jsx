@@ -2,16 +2,16 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { Search } from "lucide-react";
 import toast from "react-hot-toast";
 
-import { Input } from "../restaurant/components/ui/input";
-import { RestaurantHeader } from "../Components/restprof/RestaurantHeader";
-import { FoodItem } from "../Components/restprof/FoodItem";
-import { CartSidebar } from "../Components/restprof/CartSidebar";
-import { FoodFilter } from "../Components/restprof/FoodFilter";
-import { axiosInstance } from "../../lib/axios";
-import { useCartStore } from "../store/cartStore";
-import { userAuthStore } from "../store/userAuthStore";
+import { Input } from "../../restaurant/components/ui/input";
+import { RestaurantHeader } from "../../Components/restprof/RestaurantHeader";
+import { FoodItem } from "../../Components/restprof/FoodItem";
+import { CartSidebar } from "../../Components/restprof/CartSidebar";
+import { FoodFilter } from "../../Components/restprof/FoodFilter";
+import { axiosInstance } from "../../../lib/axios";
+import { useCartStore } from "../../store/cartStore";
+import { userAuthStore } from "../../store/userAuthStore";
 import { useNavigate, useParams } from "react-router-dom";
-import Navbar from "../Components/skeleton/Navbar";
+import Navbar from "../../Components/skeleton/Navbar";
 
 export default function Restaurant() {
   const [activeCategory, setActiveCategory] = useState("Popular");
@@ -39,7 +39,7 @@ export default function Restaurant() {
 
   useEffect(() => {
     axiosInstance
-      .get(`/customer/getRestaurant/${id}`)
+      .get(`/customer/restaurant/getRestaurant/${id}`)
       .then((res) => {
         setRestaurant(res.data.restaruntDetails);
         setmenuItems(res.data.menuItems);
@@ -124,7 +124,7 @@ export default function Restaurant() {
       return;
     }
     try {
-      const res = await axiosInstance.post("/customer/add_cart", {
+      const res = await axiosInstance.post("/customer/cart/add_cart", {
         menu_item_id: item.menu_item_id,
         restaurant_id: restaurant.restaurant_id,
         quantity: 1,

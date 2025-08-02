@@ -57,7 +57,7 @@ const DashboardRest = ({ setActiveTab, setCurrentView }) => {
 
   const getStatCard = async () => {
     try {
-      const respons = await axiosInstance.get("/restaurant/today_stat");
+      const respons = await axiosInstance.get("/restaurant/stat/today_stat");
       return respons.data;
     } catch (err) {
       console.error("Error fetching today stat:", err.message);
@@ -75,7 +75,9 @@ const DashboardRest = ({ setActiveTab, setCurrentView }) => {
 
   const getRecentOrder = async () => {
     try {
-      const response = await axiosInstance.get("/restaurant/recent_orders");
+      const response = await axiosInstance.get(
+        "/restaurant/order/recent_orders"
+      );
       const rawOrders = response.data;
 
       const getTimeAgo = (createdAt) => {
@@ -104,6 +106,7 @@ const DashboardRest = ({ setActiveTab, setCurrentView }) => {
         status: order.status,
         time: getTimeAgo(order.created_at),
       }));
+      console.log(formattedOrders);
 
       return formattedOrders;
     } catch (err) {
@@ -174,7 +177,11 @@ const DashboardRest = ({ setActiveTab, setCurrentView }) => {
                 Your latest customer orders
               </CardDescription>
             </div>
-            <Button variant="outline" className="border-gray-600 text-gray-100">
+            <Button
+              variant="outline"
+              className="border-gray-600 text-gray-100"
+              onClick={() => setActiveTab("orders")}
+            >
               View All Orders
             </Button>
           </div>
