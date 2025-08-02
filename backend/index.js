@@ -37,48 +37,51 @@ app.use(
 );
 
 // Register routes
-console.log("Registering customer authentication routes...");
-app.use("/api/customer", customerAuthRoute);
-console.log("Registering customer restaurant routes...");
-app.use("/api/customer", customerRestaurantRoutes);
-console.log("Registering customer cart routes...");
-app.use("/api/customer", customerCartRoutes);
-console.log("Registering customer order routes...");
-app.use("/api/customer/order", customerOrderRoutes);
 
-console.log("Registering rider routes...");
+//console.log("Registering rider routes...");
 app.use("/api/rider", riderAuthRoute);
 app.use("/api/rider/data", router);
-console.log("Registering restaurant routes...");
 
+//console.log("Registering restaurant routes...");
 app.use("/api/restaurant", restaurantRoute);
+app.use("/api/restaurant", restaurantOrder); //restaurant order management
+app.use("/api/restaurant/stats", restaurnatStat); // for fetching restaurnant statistics
 console.log("Registering menu routes...");
 app.use("/api/menu", menuRoutes); // Register the menu routes
 
-console.log("Registering customer payment routes...");
+//console.log("Registering customer payment routes...");
+
 const store_id = process.env.SSL_COMMERZ_STORE_ID;
 const store_passwd = process.env.SSL_COMMERZ_STORE_PASSWORD;
-console.log("Loaded SSLCommerz Store ID:", store_id);
-console.log("Loaded SSLCommerz Store Password:", store_passwd);
+//console.log("Loaded SSLCommerz Store ID:", store_id);
+//console.log("Loaded SSLCommerz Store Password:", store_passwd);
+
 if (!store_id || !store_passwd) {
   console.error(
     "ERROR: SSLCommerz store_id or store_passwd is missing. Check your .env file."
   );
   process.exit(1);
 }
+
 const customerPaymentRoutes = createCustomerPaymentRoutes(
   store_id,
   store_passwd
 );
+
 app.use("/api/customer/payment", customerPaymentRoutes);
-console.log("Registering review routes...");
+//console.log("Registering review routes...");
 app.use("/api/customer/review", reviewRoutes);
+//console.log("Registering customer authentication routes...");
+app.use("/api/customer", customerAuthRoute);
+//console.log("Registering customer restaurant routes...");
+app.use("/api/customer", customerRestaurantRoutes);
+//console.log("Registering customer cart routes...");
+app.use("/api/customer", customerCartRoutes);
+//console.log("Registering customer order routes...");
+app.use("/api/customer/order", customerOrderRoutes);
+
 app.use("/api/chat", chatRoutes);
 app.use("/api/chat", chatRoutes);
-
-app.use("/api/restaurant", restaurantOrder); //restaurant order management
-
-app.use("/api/restaurant/stats", restaurnatStat); // for fetching restaurnant statistics
 
 const PORT = process.env.PORT || 5001;
 server.listen(PORT, () => {
