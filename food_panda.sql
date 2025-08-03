@@ -88,7 +88,8 @@ CREATE TABLE menu_items (
   discount DECIMAL(10,2),
   is_available BOOLEAN DEFAULT true,
   menu_item_image_url VARCHAR(255),
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  is_active BOOLEAN DEFAULT true,
 );
 
 -- CARTS
@@ -137,7 +138,6 @@ CREATE TABLE payments (
   method_type payment_method,
   amount DECIMAL(10,2),
   status VARCHAR(20),
-  transaction_id VARCHAR(255),
   tran_id VARCHAR(255) UNIQUE,
   paid_at TIMESTAMP
 );

@@ -12,12 +12,31 @@ dotenv.config();
 //   ssl: { rejectUnauthorized: false }, // Required for Supabase
 // });
 
+// const connectionString = process.env.DATABASE_URL;
+// const pool = postgres(connectionString);
+// const result = await pool`SELECT NOW()`;
+// console.log(result);
+
 const pool = new Pool({
-  user: "postgres",
-  password: "riyo",
-  host: "localhost",
-  port: 5432,
-  database: "food_panda",
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false,
+  },
 });
 
+// const pool = new Pool({
+//   user: "postgres",
+//   password: "riyo",
+//   host: "localhost",
+//   port: 5432,
+//   database: "food_panda",
+// });
+
 export default pool;
+
+// import postgres from 'postgres'
+
+// const connectionString = process.env.DATABASE_URL
+// const sql = postgres(connectionString)
+
+// export default sql

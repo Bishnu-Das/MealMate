@@ -54,6 +54,7 @@ const CheckoutPage = () => {
     }
 
     // Generate a unique transaction ID for this order
+
     const tran_id = `FOODPANDA_${Date.now()}_${Math.floor(
       Math.random() * 1000
     )}`;
@@ -65,6 +66,12 @@ const CheckoutPage = () => {
       address: authUser.address || "N/A", // Assuming address might be in authUser
       phone: authUser.phone_number || "N/A",
     };
+    console.log(
+      "payment intiate button clicked...",
+      tran_id,
+      paymentMethod,
+      customerInfo
+    );
     if (paymentMethod === "cod") {
       try {
         await axiosInstance.post("/customer/order/create", { cartItems });

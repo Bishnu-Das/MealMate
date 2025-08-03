@@ -132,7 +132,7 @@ function MenuManagementRest() {
       is_available: !item.is_available,
     };
     await axiosInstance.put(
-      `/restaurant/change_availablity/${item.menu_item_id}`,
+      `/restaurant/menu/change_availablity/${item.menu_item_id}`,
       { status: !item.is_available }
     );
     const updated_items = await get_menus();
