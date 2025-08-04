@@ -17,20 +17,20 @@ dotenv.config();
 // const result = await pool`SELECT NOW()`;
 // console.log(result);
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false,
-  },
-});
-
 // const pool = new Pool({
-//   user: "postgres",
-//   password: "riyo",
-//   host: "localhost",
-//   port: 5432,
-//   database: "food_panda",
+//   connectionString: process.env.DATABASE_URL,
+//   ssl: {
+//     rejectUnauthorized: false,
+//   },
 // });
+
+const pool = new Pool({
+  user: "postgres",
+  password: "riyo",
+  host: "localhost",
+  port: 5432,
+  database: "food_panda",
+});
 
 export default pool;
 

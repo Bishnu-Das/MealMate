@@ -1,6 +1,5 @@
-
-import pool from '../db.js';
-import { getIO } from '../socket.js';
+import pool from "../db.js";
+import { getIO } from "../socket.js";
 
 export const getConversations = async (req, res) => {
   try {
@@ -29,12 +28,15 @@ export const getConversations = async (req, res) => {
       `,
       [userId]
     );
-    console.log(`Backend: getConversations query result for userId ${userId}:`, conversations.rows);
+    console.log(
+      `Backend: getConversations query result for userId ${userId}:`,
+      conversations.rows
+    );
 
     res.json(conversations.rows);
   } catch (err) {
     console.error(err.message);
-    res.status(500).send('Server error');
+    res.status(500).send("Server error");
   }
 };
 
@@ -44,9 +46,12 @@ export const getMessages = async (req, res) => {
     const userId = req.user.id;
 
     // Get chat_id for the order
-    const chatResult = await pool.query('SELECT chat_id FROM chats WHERE order_id = $1', [orderId]);
+    const chatResult = await pool.query(
+      "SELECT chat_id FROM chats WHERE order_id = $1",
+      [orderId]
+    );
     if (chatResult.rows.length === 0) {
-      return res.json({ messages: [], otherParticipantName: '' }); // No chat for this order yet
+      return res.json({ messages: [], otherParticipantName: "" }); // No chat for this order yet
     }
     const chatId = chatResult.rows[0].chat_id;
 
@@ -59,9 +64,11 @@ export const getMessages = async (req, res) => {
       [chatId]
     );
 
-    let otherParticipantName = '';
+    let otherParticipantName = "";
     if (participantsResult.rows.length > 1) {
-      const otherParticipant = participantsResult.rows.find(p => p.user_id !== userId);
+      const otherParticipant = participantsResult.rows.find(
+        (p) => p.user_id !== userId
+      );
       if (otherParticipant) {
         otherParticipantName = otherParticipant.name;
       }
@@ -84,10 +91,9 @@ export const getMessages = async (req, res) => {
       messages: messages.rows,
       otherParticipantName: otherParticipantName,
     });
-
   } catch (err) {
     console.error(err.message);
-    res.status(500).send('Server error');
+    res.status(500).send("Server error");
   }
 };
 
@@ -100,36 +106,63 @@ export const sendMessage = async (req, res) => {
     let chatId;
 
     // Try to find existing chat
-    let chat = await pool.query('SELECT chat_id FROM chats WHERE order_id = $1', [orderId]);
+    let chat = await pool.query(
+      "SELECT chat_id FROM chats WHERE order_id = $1",
+      [orderId]
+    );
 
     if (chat.rows.length === 0) {
       // If no chat found, try to create one
       try {
-        const newChat = await pool.query('INSERT INTO chats (order_id) VALUES ($1) RETURNING chat_id', [orderId]);
+        const newChat = await pool.query(
+          "INSERT INTO chats (order_id) VALUES ($1) RETURNING chat_id",
+          [orderId]
+        );
         chatId = newChat.rows[0].chat_id;
 
-        console.log(`Backend: Attempting to fetch order for orderId: ${orderId}`);
-        const order = await pool.query('SELECT user_id, rider_id FROM orders WHERE order_id = $1', [orderId]);
-        console.log(`Backend: Order fetch result for orderId ${orderId}:`, order.rows[0]);
+        console.log(
+          `Backend: Attempting to fetch order for orderId: ${orderId}`
+        );
+        const order = await pool.query(
+          "SELECT user_id, rider_id FROM orders WHERE order_id = $1",
+          [orderId]
+        );
+        console.log(
+          `Backend: Order fetch result for orderId ${orderId}:`,
+          order.rows[0]
+        );
 
         if (order.rows.length === 0) {
           throw new Error(`Order with ID ${orderId} not found.`);
         }
 
         const { user_id, rider_id } = order.rows[0];
-        console.log(`Backend: Extracted user_id: ${user_id}, rider_id: ${rider_id}`);
+        console.log(
+          `Backend: Extracted user_id: ${user_id}, rider_id: ${rider_id}`
+        );
 
-        await pool.query('INSERT INTO chat_participants (chat_id, user_id, role) VALUES ($1, $2, $3), ($1, $4, $5)', [chatId, user_id, 'customer', rider_id, 'rider']);
+        await pool.query(
+          "INSERT INTO chat_participants (chat_id, user_id, role) VALUES ($1, $2, $3), ($1, $4, $5)",
+          [chatId, user_id, "customer", rider_id, "rider"]
+        );
       } catch (insertError) {
         // If insert fails due to duplicate key, it means another process created it
-        if (insertError.code === '23505') { // PostgreSQL unique violation error code
-          console.warn(`Race condition: Chat for order ${orderId} already created. Retrieving existing chat_id.`);
-          chat = await pool.query('SELECT chat_id FROM chats WHERE order_id = $1', [orderId]);
+        if (insertError.code === "23505") {
+          // PostgreSQL unique violation error code
+          console.warn(
+            `Race condition: Chat for order ${orderId} already created. Retrieving existing chat_id.`
+          );
+          chat = await pool.query(
+            "SELECT chat_id FROM chats WHERE order_id = $1",
+            [orderId]
+          );
           if (chat.rows.length > 0) {
             chatId = chat.rows[0].chat_id;
           } else {
             // This case should ideally not happen if 23505 was thrown
-            throw new Error('Failed to retrieve chat_id after duplicate key error.');
+            throw new Error(
+              "Failed to retrieve chat_id after duplicate key error."
+            );
           }
         } else {
           throw insertError; // Re-throw other errors
@@ -140,17 +173,26 @@ export const sendMessage = async (req, res) => {
     }
 
     const newMessage = await pool.query(
-      'INSERT INTO chat_messages (chat_id, sender_id, message) VALUES ($1, $2, $3) RETURNING *'
-      ,
+      "INSERT INTO chat_messages (chat_id, sender_id, message) VALUES ($1, $2, $3) RETURNING *",
       [chatId, userId, message]
     );
 
-    const senderInfo = await pool.query('SELECT name, role_id FROM users WHERE user_id = $1', [userId]);
-    const messageWithSenderName = { ...newMessage.rows[0], sender_name: senderInfo.rows[0].name, sender_role: senderInfo.rows[0].role_id };
+    const senderInfo = await pool.query(
+      "SELECT name, role_id FROM users WHERE user_id = $1",
+      [userId]
+    );
+    const messageWithSenderName = {
+      ...newMessage.rows[0],
+      sender_name: senderInfo.rows[0].name,
+      sender_role: senderInfo.rows[0].role_id,
+    };
 
     const io = getIO();
-    console.log(`Attempting to emit 'receive_message' to room: ${orderId} with message:`, messageWithSenderName);
-    io.to(orderId).emit('receive_message', messageWithSenderName);
+    console.log(
+      `Attempting to emit 'receive_message' to room: ${orderId} with message:`,
+      messageWithSenderName
+    );
+    io.to(orderId).emit("receive_message", messageWithSenderName);
 
     // Also emit to individual participant rooms
     const participants = await pool.query(
@@ -158,15 +200,17 @@ export const sendMessage = async (req, res) => {
       [chatId]
     );
 
-    participants.rows.forEach(participant => {
+    participants.rows.forEach((participant) => {
       const roomName = `${participant.role}_${participant.user_id}`;
-      console.log(`Attempting to emit 'receive_message' to individual room: ${roomName}`);
-      io.to(roomName).emit('receive_message', messageWithSenderName);
+      console.log(
+        `Attempting to emit 'receive_message' to individual room: ${roomName}`
+      );
+      io.to(roomName).emit("receive_message", messageWithSenderName);
     });
 
     res.json(messageWithSenderName);
   } catch (err) {
     console.error(err.message);
-    res.status(500).send('Server error');
+    res.status(500).send("Server error");
   }
 };
